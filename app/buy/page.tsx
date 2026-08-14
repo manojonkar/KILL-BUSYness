@@ -3,6 +3,7 @@ import Header from "@/components/Header";
 import { createClient } from "@/lib/supabase/server";
 import { FORMATS, getSettings } from "@/lib/book";
 import { placeOrder } from "./actions";
+import OrderForm from "./OrderForm";
 
 const ORDER = ["ebook", "paperback", "hardcover"];
 
@@ -20,6 +21,18 @@ export default async function BuyPage({
   const amazon = settings.amazon_url || "";
   const upiReady = upi && !upi.startsWith("REPLACE_");
 
+  let orderAmount = fmt.price;
+  if (searchParams?.ref) {
+    const { data: orderData } = await supabase
+      .from("book_orders")
+      .select("amount")
+      .eq("ref", searchParams.ref)
+      .single();
+    if (orderData) {
+      orderAmount = orderData.amount;
+    }
+  }
+
   if (searchParams?.ref) {
     return (
       <>
@@ -31,7 +44,7 @@ export default async function BuyPage({
             <p>Your order reference is <strong>{searchParams.ref}</strong>. We&apos;ve emailed you a copy.</p>
           </div>
           <div className="card" style={{ padding: 30, maxWidth: 620 }}>
-            <h3 style={{ marginBottom: 10 }}>Pay ₹{fmt.price.toLocaleString("en-IN")} by UPI</h3>
+            <h3 style={{ marginBottom: 10 }}>Pay ₹{orderAmount.toLocaleString("en-IN")} by UPI</h3>
             {upiReady ? (
               <>
                 <p style={{ fontSize: ".9rem", color: "var(--ink-soft)", marginBottom: 14 }}>
@@ -41,7 +54,7 @@ export default async function BuyPage({
                   <div style={{ background: "#fff", padding: 10, borderRadius: 8, flex: "0 0 auto" }}>
                     <img
                       src={`/img/upi-qr-${fmt.key}`}
-                      alt={`Scan to pay Rs ${fmt.price} by UPI`}
+                      alt={`Scan to pay Rs ${orderAmount} by UPI`}
                       width={168}
                       height={168}
                       style={{ display: "block", width: 168, height: 168 }}
@@ -54,7 +67,7 @@ export default async function BuyPage({
                     <div style={{ fontFamily: "var(--mono)", fontSize: "1rem", fontWeight: 700, wordBreak: "break-all" }}>{upi}</div>
                     <div style={{ fontSize: ".8rem", color: "var(--ink-soft)", marginTop: 4 }}>{payee}</div>
                     <div style={{ fontSize: ".8rem", color: "var(--ink-soft)", marginTop: 8 }}>
-                      The QR already carries the amount, ₹{fmt.price.toLocaleString("en-IN")}.
+                      The QR already carries the amount, ₹{orderAmount.toLocaleString("en-IN")}.
                     </div>
                   </div>
                 </div>
@@ -127,51 +140,7 @@ export default async function BuyPage({
           <p style={{ color: "var(--ink-soft)", fontSize: ".85rem", marginBottom: 20 }}>
             ₹{fmt.price.toLocaleString("en-IN")} · {fmt.blurb}
           </p>
-          <form action={placeOrder} className="form-grid">
-            <input type="hidden" name="format" value={fmt.key} />
-            <div className="field">
-              <label>Your Name</label>
-              <input name="name" placeholder="Full name" required />
-            </div>
-            <div className="field">
-              <label>Company</label>
-              <input name="company" placeholder="Company name" />
-            </div>
-            <div className="field">
-              <label>Email</label>
-              <input name="email" type="email" placeholder="you@company.com" required />
-            </div>
-            <div className="field">
-              <label>Contact Number</label>
-              <input name="phone" type="tel" placeholder="+91 98765 43210" required />
-            </div>
-            {fmt.physical ? (
-              <>
-                <div className="field full">
-                  <label>Delivery Address</label>
-                  <textarea name="address" rows={3} placeholder="Flat / building / street" required />
-                </div>
-                <div className="field">
-                  <label>City</label>
-                  <input name="city" placeholder="City" required />
-                </div>
-                <div className="field">
-                  <label>State</label>
-                  <input name="state" placeholder="State" />
-                </div>
-                <div className="field">
-                  <label>PIN Code</label>
-                  <input name="pincode" placeholder="400001" required />
-                </div>
-              </>
-            ) : null}
-            <p style={{ gridColumn: "1/-1", fontSize: ".78rem", color: "var(--ink-faint)", marginTop: 8 }}>
-              Your details are used only to fulfil this order. Payment is by UPI on the next screen.
-            </p>
-            <button className="btn btn-primary" style={{ marginTop: 12, gridColumn: "1/-1" }} type="submit">
-              Place Order — ₹{fmt.price.toLocaleString("en-IN")}
-            </button>
-          </form>
+          <OrderForm fmt={fmt} placeOrder={placeOrder} />
         </div>
 
         {amazon ? (
