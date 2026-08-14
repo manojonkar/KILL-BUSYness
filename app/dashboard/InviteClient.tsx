@@ -51,6 +51,109 @@ export default function InviteClient({
   siteUrl: string;
 }) {
   const used = participants.length;
+  const [bulkText, setBulkText] = useState("");
+  const [parsingError, setParsingError] = useState<string | null>(null);
+  const [isParsing, setIsParsing] = useState(false);
+
+  const normalizeLevel = (lvl: string): string => {
+    const l = String(lvl || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+    if (l.includes("ceo") || l.includes("owner")) return "Owner / CEO";
+    if (l.includes("senior") || l.includes("leadership") || l.includes("director") || l.includes("vp")) return "Senior Leadership";
+    if (l.includes("manager") || l.includes("head") || l.includes("lead")) return "Manager";
+    return "Employee";
+  };
+
+  const handleExcelUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setParsingError(null);
+    setIsParsing(true);
+
+    const reader = new FileReader();
+    reader.onload = async (evt) => {
+      try {
+        const arrayBuffer = evt.target?.result as ArrayBuffer;
+        const XLSX = await import("xlsx");
+        const u8 = new Uint8Array(arrayBuffer);
+        const wb = XLSX.read(u8, { type: "array" });
+        const wsname = wb.SheetNames[0];
+        const ws = wb.Sheets[wsname];
+        
+        // Convert sheet to array of arrays (raw format)
+        const data = XLSX.utils.sheet_to_json<any[]>(ws, { header: 1 });
+        
+        if (data.length === 0) {
+          setParsingError("The uploaded file is empty.");
+          setIsParsing(false);
+          return;
+        }
+
+        const lines: string[] = [];
+        
+        // Detect headers
+        const firstRow = data[0] as string[];
+        let nameIdx = 0;
+        let emailIdx = 1;
+        let levelIdx = 2;
+
+        if (firstRow && firstRow.length > 0) {
+          const lowerHeaders = firstRow.map(h => String(h || "").toLowerCase().trim());
+          const foundName = lowerHeaders.findIndex(h => h.includes("name") || h.includes("title"));
+          const foundEmail = lowerHeaders.findIndex(h => h.includes("email") || h.includes("mail"));
+          const foundLevel = lowerHeaders.findIndex(h => h.includes("level") || h.includes("role") || h.includes("type"));
+          
+          if (foundName !== -1) nameIdx = foundName;
+          if (foundEmail !== -1) emailIdx = foundEmail;
+          if (foundLevel !== -1) levelIdx = foundLevel;
+        }
+
+        const hasHeaders = firstRow && firstRow.some(h => {
+          const l = String(h || "").toLowerCase();
+          return l.includes("name") || l.includes("email");
+        });
+        const startRow = hasHeaders ? 1 : 0;
+
+        for (let r = startRow; r < data.length; r++) {
+          const row = data[r] as any[];
+          if (!row || row.length === 0) continue;
+          
+          const name = String(row[nameIdx] || "").trim();
+          const email = String(row[emailIdx] || "").trim();
+          const levelVal = levelIdx !== -1 && row[levelIdx] ? String(row[levelIdx]).trim() : "Employee";
+          const level = normalizeLevel(levelVal);
+          
+          if (name && email && email.includes("@")) {
+            lines.push(`${name}, ${email}, ${level}`);
+          }
+        }
+
+        if (lines.length === 0) {
+          setParsingError("No valid rows containing both Name and Email were found.");
+        } else {
+          setBulkText(prev => {
+            const current = prev.trim();
+            const added = lines.join("\n");
+            return current ? `${current}\n${added}` : added;
+          });
+        }
+      } catch (err: any) {
+        setParsingError("Failed to parse file: " + err.message);
+      } finally {
+        setIsParsing(false);
+        // Reset file input so same file can be uploaded again if needed
+        e.target.value = "";
+      }
+    };
+    
+    reader.onerror = () => {
+      setParsingError("Error reading file.");
+      setIsParsing(false);
+    };
+
+    reader.readAsArrayBuffer(file);
+  };
+
   return (
     <>
       <div className="card" style={{ padding: 30, marginBottom: 16 }}>
@@ -121,15 +224,83 @@ export default function InviteClient({
           {used}/{seats} seats used. An invite email goes out automatically when you add someone — if it doesn&apos;t arrive, use Resend, or copy the survey link and send it any way you like. Each link is unique to that person. Anyone who has completed the survey is locked, so their answers can&apos;t be deleted from here.
         </p>
       </div>
+      
       <div className="card" style={{ padding: 30 }}>
         <span className="eyebrow">Bulk Add Participants</span>
         <h3 style={{ marginBottom: 4 }}>Invite many people at once</h3>
         <p style={{ color: "var(--ink-soft)", fontSize: ".85rem", marginBottom: 14 }}>
-          Paste a list below — one person per line: <code>Name, Email, Level</code> (Level optional, defaults to Employee).
+          Paste a list below, or upload an Excel/CSV spreadsheet. Format: one person per line: <code>Name, Email, Level</code> (Level is optional, mapping to Owner/CEO, Senior Leadership, Manager, or Employee).
         </p>
+        
+        {/* Excel / CSV File Uploader */}
+        <div 
+          style={{ 
+            marginBottom: 20, 
+            padding: "20px", 
+            border: "2px dashed var(--line, #cbd5e1)", 
+            borderRadius: "10px", 
+            backgroundColor: "#f8fafc", 
+            textAlign: "center",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: 8
+          }}
+        >
+          <span style={{ fontSize: "0.85rem", fontWeight: 600, color: "#475569" }}>
+            📂 Upload Excel (.xlsx, .xls) or CSV file
+          </span>
+          <span style={{ fontSize: "0.74rem", color: "#64748b", maxWidth: 400 }}>
+            We will detect columns named Name and Email (or columns 1 and 2) and append them automatically below.
+          </span>
+          <input
+            type="file"
+            accept=".xlsx,.xls,.csv"
+            onChange={handleExcelUpload}
+            disabled={isParsing}
+            style={{ 
+              fontSize: "0.8rem", 
+              marginTop: 10,
+              padding: "6px 12px",
+              background: "#fff",
+              border: "1px solid var(--line, #e2e8f0)",
+              borderRadius: 6,
+              cursor: "pointer"
+            }}
+          />
+          {isParsing && (
+            <span style={{ fontSize: "0.8rem", color: "var(--teal-ink, #0f766e)", fontWeight: "bold" }}>
+              ⏳ Parsing spreadsheet, please wait...
+            </span>
+          )}
+          {parsingError && (
+            <span style={{ fontSize: "0.8rem", color: "#b91c1c", fontWeight: "bold" }}>
+              ❌ {parsingError}
+            </span>
+          )}
+        </div>
+
         <form action={bulkAction}>
-          <textarea name="bulkList" rows={6} placeholder={"Priya Shah, priya@company.com, Senior Leadership\nArjun Mehta, arjun@company.com, Manager"} style={{ width: "100%", fontFamily: "var(--mono)", fontSize: ".82rem" }} />
-          <button className="btn btn-dark btn-sm" style={{ marginTop: 10 }} type="submit">Add List to Invitees</button>
+          <textarea 
+            name="bulkList" 
+            rows={6} 
+            value={bulkText}
+            onChange={(e) => setBulkText(e.target.value)}
+            placeholder={"Priya Shah, priya@company.com, Senior Leadership\nArjun Mehta, arjun@company.com, Manager"} 
+            style={{ width: "100%", fontFamily: "var(--mono)", fontSize: ".82rem" }} 
+          />
+          <div style={{ display: "flex", gap: 10, marginTop: 10 }}>
+            <button className="btn btn-dark btn-sm" type="submit">Add List to Invitees</button>
+            {bulkText && (
+              <button 
+                className="btn btn-outline btn-sm" 
+                type="button" 
+                onClick={() => setBulkText("")}
+              >
+                Clear List
+              </button>
+            )}
+          </div>
         </form>
       </div>
     </>
