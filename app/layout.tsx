@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import PageTracker from "@/components/PageTracker";
 
 export const metadata: Metadata = {
   title: "KILL BUSYness — Organization Audit Portal",
@@ -12,6 +13,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="stylesheet" href="/css" />
       </head>
       <body>
+        <PageTracker />
         {children}
         <footer className="foot site-foot">
           <div style={{ display: "flex", gap: 14, flexWrap: "wrap", justifyContent: "center", marginBottom: 10 }}>

@@ -6,7 +6,7 @@ import { updateOrderStatus } from "./actions";
 
 export const dynamic = "force-dynamic";
 
-type Tab = "orders" | "companies" | "surveys";
+type Tab = "orders" | "companies" | "surveys" | "users";
 
 export default async function AdminDashboardPage({
   searchParams
@@ -29,7 +29,11 @@ export default async function AdminDashboardPage({
   const [
     { data: orders },
     { data: companies },
-    { data: participants }
+    { data: participants },
+    authUsersResult,
+    { data: progressRows },
+    { data: chapterReadRows },
+    { data: reflectionRows }
   ] = await Promise.all([
     adminClient
       .from("book_orders")
@@ -42,19 +46,62 @@ export default async function AdminDashboardPage({
     adminClient
       .from("participants")
       .select("*, companies(name)")
-      .order("created_at", { ascending: false })
+      .order("created_at", { ascending: false }),
+    adminClient.auth.admin.listUsers(),
+    adminClient.from("user_progress").select("*"),
+    adminClient.from("user_chapter_reads").select("*"),
+    adminClient.from("user_reflections").select("*")
   ]);
 
   const allOrders = orders || [];
   const allCompanies = companies || [];
   const allParticipants = participants || [];
 
-  // 1. Compute summary stats
+  // Parse page visits safely in case table does not exist yet
+  let visitRows: any[] = [];
+  try {
+    const { data: v } = await adminClient
+      .from("page_visits")
+      .select("*")
+      .order("created_at", { ascending: false });
+    visitRows = v || [];
+  } catch {
+    // Fail silently if table does not exist
+  }
+
+  // Compile user directory and engagement profiles
+  const usersList = (authUsersResult?.data?.users || []).map((u) => {
+    const progress = (progressRows || []).find((p) => p.user_id === u.id);
+    const reads = (chapterReadRows || [])
+      .filter((cr) => cr.user_id === u.id)
+      .map((cr) => cr.chapter_id)
+      .sort((a, b) => a - b);
+    const reflectionsCount = (reflectionRows || []).filter((ref) => ref.user_id === u.id).length;
+    const visits = (visitRows || []).filter((v) => v.user_id === u.id);
+    const lastVisit = visits[0];
+
+    return {
+      id: u.id,
+      email: u.email,
+      name: u.user_metadata?.name || "Unnamed User",
+      createdAt: u.created_at,
+      lastSignIn: u.last_sign_in_at,
+      xp: progress?.xp || 0,
+      wallet: progress?.wallet || 0,
+      streak: progress?.streak || 0,
+      chaptersRead: reads,
+      reflectionsCount,
+      lastVisitPath: lastVisit?.path || null,
+      lastVisitTime: lastVisit?.created_at || null,
+      totalVisits: visits.length
+    };
+  });
+
+  // Compute summary stats
   const totalSalesCount = allOrders.length;
   const paidOrders = allOrders.filter(o => o.status === "paid" || o.status === "dispatched");
   const totalPaidRevenue = paidOrders.reduce((acc, o) => acc + o.amount, 0);
   const totalBookVolume = allOrders.reduce((acc, o) => {
-    // Extract quantity from notes (e.g. "Quantity: 12 ...")
     const match = o.notes?.match(/Quantity:\s*(\d+)/i);
     const qty = match ? parseInt(match[1], 10) : 1;
     return acc + qty;
@@ -76,7 +123,14 @@ export default async function AdminDashboardPage({
         </div>
 
         {/* Stats Grid */}
-        <div className="grid cols-4" style={{ marginBottom: 34, gap: 16 }}>
+        <div 
+          style={{ 
+            display: "grid", 
+            gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", 
+            gap: 16, 
+            marginBottom: 34 
+          }}
+        >
           <div className="card mini-card" style={{ padding: "20px 24px" }}>
             <span className="eyebrow" style={{ color: "var(--ink-soft)" }}>Paid Revenue</span>
             <h3 style={{ fontSize: "1.8rem", margin: "6px 0 2px", color: "var(--teal-ink, #0f766e)" }}>
@@ -85,11 +139,16 @@ export default async function AdminDashboardPage({
             <p style={{ fontSize: "0.78rem", color: "var(--ink-faint)" }}>From {paidOrders.length} paid orders</p>
           </div>
           <div className="card mini-card" style={{ padding: "20px 24px" }}>
-            <span className="eyebrow" style={{ color: "var(--ink-soft)" }}>Total Books Ordered</span>
+            <span className="eyebrow" style={{ color: "var(--ink-soft)" }}>Books Ordered</span>
             <h3 style={{ fontSize: "1.8rem", margin: "6px 0 2px" }}>
               {totalBookVolume} <span style={{ fontSize: "0.9rem", fontWeight: 400, color: "var(--ink-soft)" }}>copies</span>
             </h3>
             <p style={{ fontSize: "0.78rem", color: "var(--ink-faint)" }}>Across {totalSalesCount} placed orders</p>
+          </div>
+          <div className="card mini-card" style={{ padding: "20px 24px" }}>
+            <span className="eyebrow" style={{ color: "var(--ink-soft)" }}>Active Readers</span>
+            <h3 style={{ fontSize: "1.8rem", margin: "6px 0 2px" }}>{usersList.length}</h3>
+            <p style={{ fontSize: "0.78rem", color: "var(--ink-faint)" }}>Registered user accounts</p>
           </div>
           <div className="card mini-card" style={{ padding: "20px 24px" }}>
             <span className="eyebrow" style={{ color: "var(--ink-soft)" }}>Registered Companies</span>
@@ -106,7 +165,7 @@ export default async function AdminDashboardPage({
         </div>
 
         {/* Tab Controls */}
-        <div style={{ display: "flex", borderBottom: "1px solid var(--line)", marginBottom: 24, gap: 14 }}>
+        <div style={{ display: "flex", borderBottom: "1px solid var(--line)", marginBottom: 24, gap: 14, flexWrap: "wrap" }}>
           <Link
             href="/admin?tab=orders"
             style={{
@@ -148,6 +207,20 @@ export default async function AdminDashboardPage({
             }}
           >
             📊 Survey completions ({allParticipants.length})
+          </Link>
+          <Link
+            href="/admin?tab=users"
+            style={{
+              padding: "10px 18px 8px",
+              textDecoration: "none",
+              fontWeight: 600,
+              fontSize: "0.92rem",
+              color: currentTab === "users" ? "var(--teal-ink, #0f766e)" : "var(--ink-soft)",
+              borderBottom: currentTab === "users" ? "3px solid var(--teal)" : "3px solid transparent",
+              transition: "all 0.15s ease"
+            }}
+          >
+            👤 User Activity ({usersList.length})
           </Link>
         </div>
 
@@ -277,7 +350,6 @@ export default async function AdminDashboardPage({
                         year: "numeric"
                       });
 
-                      // Calculate completion metrics for this company
                       const companyParticipants = allParticipants.filter(p => p.company_id === c.id);
                       const completions = companyParticipants.filter(p => p.status === "completed").length;
 
@@ -362,6 +434,109 @@ export default async function AdminDashboardPage({
                             </span>
                           </td>
                           <td style={{ padding: 12, color: "var(--ink-soft)" }}>{completedTime}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          )}
+
+          {/* TAB: User Activity */}
+          {currentTab === "users" && (
+            <div>
+              <h3 style={{ marginBottom: 16 }}>User Engagement Profile</h3>
+              {usersList.length === 0 ? (
+                <p style={{ color: "var(--ink-faint)", fontSize: "0.9rem" }}>No users registered yet.</p>
+              ) : (
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.85rem", textAlign: "left" }}>
+                  <thead>
+                    <tr style={{ borderBottom: "2px solid var(--line)", background: "#f8fafc" }}>
+                      <th style={{ padding: 12 }}>User / Account</th>
+                      <th style={{ padding: 12, textAlign: "center" }}>Stats (XP / Streak)</th>
+                      <th style={{ padding: 12, textAlign: "center" }}>Chapters Read</th>
+                      <th style={{ padding: 12, textAlign: "center" }}>Reflections Count</th>
+                      <th style={{ padding: 12 }}>Last Navigated</th>
+                      <th style={{ padding: 12 }}>Joined / Last Sign-in</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {usersList.map((u) => {
+                      const joined = new Date(u.createdAt).toLocaleDateString("en-IN", {
+                        day: "2-digit",
+                        month: "short",
+                        year: "numeric"
+                      });
+                      const lastSeen = u.lastSignIn 
+                        ? new Date(u.lastSignIn).toLocaleDateString("en-IN", {
+                            day: "2-digit",
+                            month: "short",
+                            year: "numeric"
+                          })
+                        : "—";
+
+                      return (
+                        <tr key={u.id} style={{ borderBottom: "1px solid var(--line)" }}>
+                          <td style={{ padding: 12 }}>
+                            <strong>{u.name}</strong>
+                            <div style={{ fontSize: "0.78rem", color: "var(--ink-soft)" }}>{u.email}</div>
+                          </td>
+                          <td style={{ padding: 12, textAlign: "center" }}>
+                            <div style={{ fontWeight: "bold", color: "var(--teal-ink, #0f766e)" }}>{u.xp} XP</div>
+                            <div style={{ fontSize: "0.76rem", color: "var(--ink-faint)" }}>{u.streak} day streak</div>
+                          </td>
+                          <td style={{ padding: 12, textAlign: "center" }}>
+                            <span style={{ 
+                              padding: "2px 8px", 
+                              borderRadius: "4px", 
+                              fontWeight: "bold",
+                              backgroundColor: u.chaptersRead.length > 0 ? "#ccfbf1" : "#f1f5f9",
+                              color: u.chaptersRead.length > 0 ? "#0f766e" : "#475569"
+                            }}>
+                              {u.chaptersRead.length} chapters
+                            </span>
+                            {u.chaptersRead.length > 0 && (
+                              <div style={{ fontSize: "0.72rem", color: "var(--ink-soft)", marginTop: 4 }}>
+                                Ch: {u.chaptersRead.join(", ")}
+                              </div>
+                            )}
+                          </td>
+                          <td style={{ padding: 12, textAlign: "center" }}>
+                            <span style={{ 
+                              padding: "2px 8px", 
+                              borderRadius: "4px", 
+                              fontWeight: "bold",
+                              backgroundColor: u.reflectionsCount > 0 ? "#ccfbf1" : "#f1f5f9",
+                              color: u.reflectionsCount > 0 ? "#0f766e" : "#475569"
+                            }}>
+                              {u.reflectionsCount} written
+                            </span>
+                          </td>
+                          <td style={{ padding: 12 }}>
+                            {u.lastVisitPath ? (
+                              <div>
+                                <code style={{ color: "#0f766e", fontWeight: "bold" }}>{u.lastVisitPath}</code>
+                                <div style={{ fontSize: "0.74rem", color: "var(--ink-faint)" }}>
+                                  {new Date(u.lastVisitTime!).toLocaleString("en-IN", {
+                                    day: "2-digit",
+                                    month: "short",
+                                    hour: "2-digit",
+                                    minute: "2-digit"
+                                  })}
+                                </div>
+                                <div style={{ fontSize: "0.72rem", color: "var(--ink-soft)" }}>
+                                  Total views: {u.totalVisits}
+                                </div>
+                              </div>
+                            ) : (
+                              <span style={{ color: "var(--ink-faint)" }}>No navigations logged yet</span>
+                            )}
+                          </td>
+                          <td style={{ padding: 12 }}>
+                            <div style={{ fontSize: "0.8rem" }}>Joined: {joined}</div>
+                            <div style={{ fontSize: "0.76rem", color: "var(--ink-faint)" }}>Seen: {lastSeen}</div>
+                          </td>
                         </tr>
                       );
                     })}
