@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 
 export function createClient() {
   const cookieStore = cookies();
@@ -19,5 +20,12 @@ export function createClient() {
         }
       }
     }
+  );
+}
+
+export function createAdminClient() {
+  return createSupabaseClient(
+    (process.env.NEXT_PUBLIC_SUPABASE_URL || "https://oictzdcrdqgwawezwjzr.supabase.co"),
+    (process.env.SUPABASE_SERVICE_ROLE_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9pY3R6ZGNyZHFnd2F3ZXp3anpyIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4NTk5NzkzNCwiZXhwIjoyMTAxNTczOTM0fQ.ETwNnjVfKrjn-Q5mc9lyB0O7vhMz6gq3i210Hu2DOZA")
   );
 }
