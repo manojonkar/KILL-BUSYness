@@ -11,8 +11,26 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <head>
         <link rel="stylesheet" href="/css" />
+        <style dangerouslySetInnerHTML={{
+          __html: `
+            html, body {
+              -webkit-user-select: none;
+              -moz-user-select: none;
+              -ms-user-select: none;
+              user-select: none;
+            }
+            img {
+              -webkit-user-drag: none;
+            }
+            @media print {
+              body {
+                display: none !important;
+              }
+            }
+          `
+        }} />
       </head>
-      <body>
+      <body onContextMenu={(e) => e.preventDefault()}>
         <PageTracker />
         {children}
         <footer className="foot site-foot">

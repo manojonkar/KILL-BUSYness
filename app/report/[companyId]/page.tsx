@@ -1,6 +1,5 @@
 import { notFound } from "next/navigation";
 import Header from "@/components/Header";
-import PrintButton from "./PrintButton";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { DIMENSIONS } from "@/lib/dimensions";
 import { computeDimensionScores, computeQuestionScores, overallScore, answersArrayFromRows, type ParticipantAnswers } from "@/lib/scoring";
@@ -141,13 +140,7 @@ export default async function ReportPage({ params }: { params: { companyId: stri
     <>
       <Header active="Overview" />
       <style dangerouslySetInnerHTML={{ __html: `
-        @media print {
-          .utilitybar,.topbar,.no-print,footer.foot { display:none!important }
-          body { background:#fff }
-          main { padding:0; max-width:none }
-          .card { box-shadow:none; border:1px solid #ddd; break-inside:avoid; page-break-inside:avoid }
-          .grid.cols-2 { grid-template-columns:1fr }
-        }
+
         .dim-insight { border-left:3px solid var(--c,#e2e0d8); padding:16px 18px; border-radius:6px; background:var(--bg,#fafaf8); margin-bottom:14px; }
         .dim-insight h5 { margin:0 0 8px; font-size:.88rem; color:#0f172a; }
         .dim-insight p { margin:6px 0 0; font-size:.82rem; color:#475569; line-height:1.6; }
@@ -165,12 +158,11 @@ export default async function ReportPage({ params }: { params: { companyId: stri
 
       <main style={{ maxWidth: 900, margin: "0 auto", padding: "24px 16px 64px" }}>
 
-        {/* Print button */}
-        <div className="no-print" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+        {/* Report Date header */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
           <div style={{ fontSize: ".8rem", color: "var(--ink-faint)" }}>
             KILL BUSYness Organizational Health Audit · {reportDate}
           </div>
-          <PrintButton />
         </div>
 
         {/* ── SECTION 1: Score Header ───────────────────────── */}
