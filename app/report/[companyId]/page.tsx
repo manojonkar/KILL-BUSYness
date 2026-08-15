@@ -49,7 +49,7 @@ export default async function ReportPage({ params }: { params: { companyId: stri
   const strongest = strongestDimensions(participants, 2);
   const analysis = overallAnalysis(participants);
 
-  const gaugeColor = overall <= 30 ? "#0E9C74" : overall <= 60 ? "#D9A441" : "#FF5A3C";
+  const gaugeColor = overall >= 70 ? "#0E9C74" : overall >= 40 ? "#D9A441" : "#FF5A3C";
   const circumference = 2 * Math.PI * 58;
 
   return (
@@ -83,8 +83,8 @@ export default async function ReportPage({ params }: { params: { companyId: stri
             <div style={{ flex: 1, minWidth: 220 }}>
               <h3>{company.name}</h3>
               <p style={{ color: "var(--ink-soft)", fontSize: ".88rem", margin: "8px 0" }}>
-                BUSYness Index based on {respCount} respondent{respCount !== 1 ? "s" : ""} across your organization. Lower is
-                better: 0 is healthiest, 100 is most dysfunction.
+                Organizational Health Score based on {respCount} respondent{respCount !== 1 ? "s" : ""} across your organization. Higher is
+                better: 100 is the healthiest, 0 is most dysfunctional.
               </p>
               <p style={{ fontSize: ".9rem" }}>{analysis.summary}</p>
             </div>
@@ -111,7 +111,7 @@ export default async function ReportPage({ params }: { params: { companyId: stri
           </div>
           <div>
             <div className="card" style={{ padding: 24, marginBottom: 16 }}>
-              <h4 style={{ marginBottom: 14 }}>What&apos;s holding you back</h4>
+              <h4 style={{ marginBottom: 14 }}>Areas that need attention</h4>
               {weakest.map((d) => (
                 <div className="insight-card" key={d.key}>
                   <strong>
@@ -146,7 +146,7 @@ export default async function ReportPage({ params }: { params: { companyId: stri
         <div className="card" style={{ padding: 26, marginTop: 16 }}>
           <h4 style={{ marginBottom: 4 }}>Question-by-Question Breakdown</h4>
           <p style={{ fontSize: ".78rem", color: "var(--ink-faint)", marginBottom: 16 }}>
-            Every one of the 40 questions is scored on its own (lower = healthier) — dimension scores above are simply the
+            Every question is scored 0–100 (higher = stronger) — dimension scores above are simply the
             average of the questions within them.
           </p>
           {DIMENSIONS.map((d) => {

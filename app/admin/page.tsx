@@ -4,6 +4,8 @@ import Header from "@/components/Header";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { updateOrderStatus } from "./actions";
 import { approveStory, removeStory } from "./stories/actions";
+import { computeDimensionScores, overallScore, answersArrayFromRows, type ParticipantAnswers } from "@/lib/scoring";
+import { scoreColor } from "@/lib/suggestions";
 
 export const dynamic = "force-dynamic";
 
@@ -35,7 +37,8 @@ export default async function AdminDashboardPage({
     { data: progressRows },
     { data: chapterReadRows },
     { data: reflectionRows },
-    { data: storiesRows }
+    { data: storiesRows },
+    { data: allResponseRows }
   ] = await Promise.all([
     adminClient
       .from("book_orders")
@@ -53,7 +56,8 @@ export default async function AdminDashboardPage({
     adminClient.from("user_progress").select("*"),
     adminClient.from("user_chapter_reads").select("*"),
     adminClient.from("user_reflections").select("*"),
-    adminClient.from("stories").select("*").order("created_at", { ascending: false })
+    adminClient.from("stories").select("*").order("created_at", { ascending: false }),
+    adminClient.from("responses").select("participant_id, question_index, answer")
   ]);
 
   const allOrders = orders || [];
@@ -368,6 +372,7 @@ export default async function AdminDashboardPage({
                       <th style={{ padding: 12 }}>Size</th>
                       <th style={{ padding: 12, textAlign: "center" }}>Invited Seats</th>
                       <th style={{ padding: 12, textAlign: "center" }}>Completions</th>
+                      <th style={{ padding: 12, textAlign: "center" }}>Audit Score</th>
                       <th style={{ padding: 12 }}>Created Date</th>
                     </tr>
                   </thead>
@@ -381,6 +386,31 @@ export default async function AdminDashboardPage({
 
                       const companyParticipants = allParticipants.filter(p => p.company_id === c.id);
                       const completions = companyParticipants.filter(p => p.status === "completed").length;
+
+                      // Compute audit score for this company
+                      const companyParticipantIds = companyParticipants.map(p => p.id);
+                      const companyResponseRows = (allResponseRows || []).filter(
+                        r => companyParticipantIds.includes(r.participant_id)
+                      );
+                      const byP = new Map<string, { question_index: number; answer: number }[]>();
+                      companyResponseRows.forEach(r => {
+                        const arr = byP.get(r.participant_id) || [];
+                        arr.push({ question_index: r.question_index, answer: r.answer });
+                        byP.set(r.participant_id, arr);
+                      });
+                      const companyParticipantAnswers: ParticipantAnswers[] = companyParticipantIds.map(id => ({
+                        participantId: id,
+                        answers: answersArrayFromRows(byP.get(id) || [])
+                      }));
+                      const hasResponses = companyParticipantAnswers.some(p => p.answers.some(a => a >= 0));
+                      const dimScores = hasResponses ? computeDimensionScores(companyParticipantAnswers) : null;
+                      const auditScore = dimScores ? overallScore(dimScores) : null;
+                      const auditBgColor = auditScore !== null
+                        ? auditScore >= 70 ? "#ccfbf1" : auditScore >= 40 ? "#fef3c7" : "#fee2e2"
+                        : "#f1f5f9";
+                      const auditTextColor = auditScore !== null
+                        ? auditScore >= 70 ? "#0f766e" : auditScore >= 40 ? "#b45309" : "#b91c1c"
+                        : "#475569";
 
                       return (
                         <tr key={c.id} style={{ borderBottom: "1px solid var(--line)" }}>
@@ -402,6 +432,32 @@ export default async function AdminDashboardPage({
                             }}>
                               {completions} completed
                             </span>
+                          </td>
+                          <td style={{ padding: 12, textAlign: "center" }}>
+                            {auditScore !== null ? (
+                              <span style={{
+                                display: "inline-flex",
+                                flexDirection: "column",
+                                alignItems: "center",
+                                gap: 2
+                              }}>
+                                <span style={{
+                                  padding: "3px 10px",
+                                  borderRadius: 6,
+                                  fontWeight: 700,
+                                  fontSize: "1rem",
+                                  backgroundColor: auditBgColor,
+                                  color: auditTextColor
+                                }}>
+                                  {auditScore}/100
+                                </span>
+                                <span style={{ fontSize: "0.68rem", color: "var(--ink-faint)" }}>
+                                  {auditScore >= 70 ? "✅ Healthy" : auditScore >= 40 ? "⚠️ Moderate" : "🔴 At Risk"}
+                                </span>
+                              </span>
+                            ) : (
+                              <span style={{ color: "var(--ink-faint)", fontSize: "0.8rem" }}>No data yet</span>
+                            )}
                           </td>
                           <td style={{ padding: 12, color: "var(--ink-soft)" }}>{regDate}</td>
                         </tr>

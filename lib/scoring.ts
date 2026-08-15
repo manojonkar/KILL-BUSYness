@@ -12,7 +12,7 @@ export interface QuestionScore {
   qIndexInDim: number;
   text: string;
   polarity: string;
-  score: number; // 0-100, 0 = healthiest
+  score: number; // 0-100, 100 = healthiest
   count: number;
 }
 
@@ -31,7 +31,7 @@ export function computeQuestionScores(participants: ParticipantAnswers[]): Quest
     });
     const avg = count ? sum / count : 0;
     const rawPct = (avg / 5) * 100;
-    const score = count ? Math.round(q.p === "dysfunction" ? rawPct : 100 - rawPct) : 0;
+    const score = count ? Math.round(q.p === "dysfunction" ? 100 - rawPct : rawPct) : 0;
     rows.push({
       dimKey: q.dimKey,
       dimLabel: dim.label,
