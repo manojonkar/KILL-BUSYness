@@ -18,6 +18,7 @@ export async function approveStory(formData: FormData) {
     await supabase.rpc("award_published_story", { p_user: story.user_id });
   }
   revalidatePath("/admin/stories");
+  revalidatePath("/admin");
   revalidatePath("/stories");
 }
 
@@ -27,5 +28,6 @@ export async function removeStory(formData: FormData) {
   const supabase = createClient();
   await supabase.from("stories").delete().eq("id", id);
   revalidatePath("/admin/stories");
+  revalidatePath("/admin");
   revalidatePath("/stories");
 }

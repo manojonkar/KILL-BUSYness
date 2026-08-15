@@ -3,10 +3,11 @@ import Link from "next/link";
 import Header from "@/components/Header";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { updateOrderStatus } from "./actions";
+import { approveStory, removeStory } from "./stories/actions";
 
 export const dynamic = "force-dynamic";
 
-type Tab = "orders" | "companies" | "surveys" | "users";
+type Tab = "orders" | "companies" | "surveys" | "users" | "stories";
 
 export default async function AdminDashboardPage({
   searchParams
@@ -33,7 +34,8 @@ export default async function AdminDashboardPage({
     authUsersResult,
     { data: progressRows },
     { data: chapterReadRows },
-    { data: reflectionRows }
+    { data: reflectionRows },
+    { data: storiesRows }
   ] = await Promise.all([
     adminClient
       .from("book_orders")
@@ -50,12 +52,17 @@ export default async function AdminDashboardPage({
     adminClient.auth.admin.listUsers(),
     adminClient.from("user_progress").select("*"),
     adminClient.from("user_chapter_reads").select("*"),
-    adminClient.from("user_reflections").select("*")
+    adminClient.from("user_reflections").select("*"),
+    adminClient.from("stories").select("*").order("created_at", { ascending: false })
   ]);
 
   const allOrders = orders || [];
   const allCompanies = companies || [];
   const allParticipants = participants || [];
+  const allStories = storiesRows || [];
+
+  const pendingStories = allStories.filter((s) => !s.approved);
+  const liveStories = allStories.filter((s) => s.approved);
 
   // Parse page visits safely in case table does not exist yet
   let visitRows: any[] = [];
@@ -221,6 +228,20 @@ export default async function AdminDashboardPage({
             }}
           >
             👤 User Activity ({usersList.length})
+          </Link>
+          <Link
+            href="/admin?tab=stories"
+            style={{
+              padding: "10px 18px 8px",
+              textDecoration: "none",
+              fontWeight: 600,
+              fontSize: "0.92rem",
+              color: currentTab === "stories" ? "var(--teal-ink, #0f766e)" : "var(--ink-soft)",
+              borderBottom: currentTab === "stories" ? "3px solid var(--teal)" : "3px solid transparent",
+              transition: "all 0.15s ease"
+            }}
+          >
+            ✍️ Stories Queue ({pendingStories.length})
           </Link>
         </div>
 
@@ -542,6 +563,59 @@ export default async function AdminDashboardPage({
                     })}
                   </tbody>
                 </table>
+              )}
+            </div>
+          )}
+
+          {/* TAB: Stories Queue */}
+          {currentTab === "stories" && (
+            <div>
+              <h3 style={{ marginBottom: 12 }}>Awaiting Review ({pendingStories.length})</h3>
+              {pendingStories.length ? (
+                pendingStories.map((s) => (
+                  <div className="card" style={{ padding: 22, marginBottom: 12, border: "1px solid var(--line)" }} key={s.id}>
+                    <span className="eyebrow">{s.role || "Leader"} {s.consent ? "" : "· NO CONSENT GIVEN"}</span>
+                    <h4 style={{ margin: "6px 0 10px" }}>{s.name}</h4>
+                    <p style={{ fontSize: ".9rem", color: "var(--ink-soft)", marginBottom: 14 }}>&ldquo;{s.body}&rdquo;</p>
+                    <div style={{ display: "flex", gap: 8 }}>
+                      {s.consent ? (
+                        <form action={approveStory}>
+                          <input type="hidden" name="id" value={s.id} />
+                          <button className="btn btn-teal btn-sm" type="submit">Approve &amp; publish</button>
+                        </form>
+                      ) : (
+                        <span style={{ fontSize: ".78rem", color: "var(--ink-faint)", alignSelf: "center" }}>Cannot publish — author did not consent.</span>
+                      )}
+                      <form action={removeStory}>
+                        <input type="hidden" name="id" value={s.id} />
+                        <button className="btn btn-outline btn-sm" type="submit">Delete</button>
+                      </form>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <p style={{ color: "var(--ink-faint)", fontSize: ".88rem", marginBottom: 24 }}>Nothing waiting. New story submissions will land here.</p>
+              )}
+
+              <h3 style={{ margin: "32px 0 12px" }}>Live on the Wall ({liveStories.length})</h3>
+              {liveStories.length ? (
+                liveStories.map((s) => (
+                  <div className="card" style={{ padding: 18, marginBottom: 10, border: "1px solid var(--line)" }} key={s.id}>
+                    <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start" }}>
+                      <div>
+                        <span className="eyebrow">{s.role || "Leader"}</span>
+                        <strong style={{ display: "block", fontSize: ".92rem", margin: "4px 0" }}>{s.name}</strong>
+                        <p style={{ fontSize: ".84rem", color: "var(--ink-soft)", marginTop: 4 }}>&ldquo;{s.body}&rdquo;</p>
+                      </div>
+                      <form action={removeStory}>
+                        <input type="hidden" name="id" value={s.id} />
+                        <button className="btn btn-outline btn-sm" type="submit">Remove</button>
+                      </form>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <p style={{ color: "var(--ink-faint)", fontSize: ".88rem" }}>No stories published yet.</p>
               )}
             </div>
           )}

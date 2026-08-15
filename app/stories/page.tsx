@@ -41,7 +41,7 @@ export default async function StoriesPage({ searchParams }: { searchParams: { er
 
         <div className="section-head" style={{ marginBottom: 18 }}>
           <span className="eyebrow">Sharing by Readers &amp; Implementors</span>
-          <h2 style={{ fontSize: "1.5rem" }}>What others have changed.</h2>
+          <h2 style={{ fontSize: "1.5rem" }}>What others have shared.</h2>
         </div>
 
         {community && community.length > 0 ? (
