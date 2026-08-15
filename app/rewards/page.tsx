@@ -56,13 +56,31 @@ export default async function RewardsPage() {
           <div className="card" style={{ padding: 24 }}>
             <h4 style={{ marginBottom: 14 }}>Badges</h4>
             <div className="badge-grid">
-              {BADGES.map((b) => (
-                <div className={`badge-tile ${badges.has(b.id) ? "unlocked" : ""}`} key={b.id}>
-                  <div className="ic">{b.ic}</div>
-                  <h5>{b.name}</h5>
-                  <p>{b.desc}</p>
-                </div>
-              ))}
+              {BADGES.map((b) => {
+                const unlocked = badges.has(b.id);
+                return (
+                  <div className={`badge-tile ${unlocked ? "unlocked" : ""}`} key={b.id} style={b.id === "b10" ? { gridColumn: "1 / -1", border: unlocked ? "1px solid #0E9C74" : undefined } : undefined}>
+                    <div className="ic">{b.ic}</div>
+                    <h5>{b.name}</h5>
+                    <p>{b.desc}</p>
+                    {b.id === "b10" && unlocked && (
+                      <a 
+                        href={`https://www.linkedin.com/profile/add?startTask=CERTIFICATION_NAME&name=${encodeURIComponent("I AM KILLING BUSYness - Master Certification")}&organizationName=${encodeURIComponent("Management Innovations")}&certUrl=${encodeURIComponent("https://www.killbusyness.com")}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="btn btn-outline btn-sm"
+                        style={{ display: "inline-flex", alignItems: "center", gap: 6, color: "#0077b5", borderColor: "#0077b5", marginTop: 12, fontSize: ".75rem" }}
+                        title="Add Certification to LinkedIn Profile"
+                      >
+                        <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor">
+                          <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+                        </svg>
+                        Add to LinkedIn
+                      </a>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
           <div className="card" style={{ padding: 24 }}>

@@ -7,6 +7,7 @@ import { weakestDimensions, strongestDimensions, scoreColor } from "@/lib/sugges
 import { DIMENSION_INSIGHTS, SPRINT_CONTENT, scoreBand, questionNote, overallInterpretation } from "@/lib/insights";
 import { touchStreak, evaluateBadges } from "@/lib/gamification";
 import PerceptionGapCTA from "@/components/PerceptionGapCTA";
+import SprintAssigner from "@/components/SprintAssigner";
 
 /* ── helpers ─────────────────────────────────────────────── */
 function bandLabel(overall: number) {
@@ -103,6 +104,31 @@ function RadarChart({ datasets }: { datasets: ChartDataset[] }) {
   );
 }
 
+/* ── metadata ─────────────────────────────────────────────── */
+export async function generateMetadata({ params }: { params: { companyId: string } }) {
+  const adminClient = createAdminClient();
+  const { data: company } = await adminClient.from("companies").select("name").eq("id", params.companyId).maybeSingle();
+  const title = company ? `${company.name} | KILL BUSYness Audit` : "KILL BUSYness Audit";
+  const desc = "We just completed our organizational health audit and committed to a 90-day sprint. No more chaos, just execution.";
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.killbusyness.com";
+  
+  return {
+    title,
+    description: desc,
+    openGraph: {
+      title,
+      description: desc,
+      images: [`${siteUrl}/api/og?company=${encodeURIComponent(company?.name || "Organization")}`],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description: desc,
+      images: [`${siteUrl}/api/og?company=${encodeURIComponent(company?.name || "Organization")}`],
+    }
+  };
+}
+
 /* ── page ─────────────────────────────────────────────────── */
 export default async function ReportPage({ params }: { params: { companyId: string } }) {
   const supabase = createClient();
@@ -117,8 +143,10 @@ export default async function ReportPage({ params }: { params: { companyId: stri
     await evaluateBadges(supabase, user.id);
   }
 
-  const { data: participantRows } = await adminClient.from("participants").select("id, status, level").eq("company_id", company.id);
+  const { data: participantRows } = await adminClient.from("participants").select("id, status, level, name").eq("company_id", company.id);
   const participantIds = (participantRows || []).map(p => p.id);
+
+  const { data: assignments } = await adminClient.from("sprint_assignments").select("*").eq("company_id", company.id);
 
   const { data: responseRows } = await adminClient
     .from("responses")
@@ -200,11 +228,24 @@ export default async function ReportPage({ params }: { params: { companyId: stri
 
       <main style={{ maxWidth: 900, margin: "0 auto", padding: "24px 16px 64px" }}>
 
-        {/* Report Date header */}
+        {/* Report Date header & Share */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
           <div style={{ fontSize: ".8rem", color: "var(--ink-faint)" }}>
             KILL BUSYness Organizational Health Audit · {reportDate}
           </div>
+          <a 
+            href={`https://www.linkedin.com/feed/?shareActive=true&text=${encodeURIComponent("We just completed our organizational health audit via KILL BUSYness. We've identified our blind spots and are committing to a 90-day sprint. No more chaos, just execution.\n\nCheck out the audit here: https://www.killbusyness.com")}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn btn-outline btn-sm"
+            style={{ display: "flex", alignItems: "center", gap: 6, color: "#0077b5", borderColor: "#0077b5" }}
+            title="Share your commitment on LinkedIn"
+          >
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+              <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+            </svg>
+            Share Commitment
+          </a>
         </div>
 
         {/* ── SECTION 1: Score Header ───────────────────────── */}
@@ -426,7 +467,16 @@ export default async function ReportPage({ params }: { params: { companyId: stri
                   <strong style={{ fontSize: ".88rem", color: "#0f172a" }}>{d.label}</strong>
                   <span style={{ fontSize: ".75rem", color: "#94a3b8", marginLeft: "auto" }}>Score: {d.score}/100</span>
                 </div>
-                <div className="sprint-body">{monthText}</div>
+                <div className="sprint-body">
+                  {monthText}
+                  <SprintAssigner 
+                    companyId={company.id}
+                    monthIndex={i}
+                    taskTitle={d.label}
+                    participants={(participantRows || []).map(p => ({ id: p.id, name: p.name || "Team Member" }))}
+                    existingAssignment={assignments?.find(a => a.month_index === i)}
+                  />
+                </div>
               </div>
             );
           })}

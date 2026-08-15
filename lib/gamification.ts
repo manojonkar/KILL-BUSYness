@@ -24,7 +24,8 @@ export const BADGES: Badge[] = [
   { id: "b4", ic: "🏗️", name: "Audit Architect", desc: "Register your organization" },
   { id: "b6", ic: "👥", name: "Team Builder", desc: "Invite 10 or more participants" },
   { id: "b7", ic: "🚀", name: "Transformer", desc: "Improve your BUSYness Index by 15+ on a re-run" },
-  { id: "b9", ic: "📣", name: "Ambassador", desc: "3 referrals sign up and start reading" }
+  { id: "b9", ic: "📣", name: "Ambassador", desc: "3 referrals sign up and start reading" },
+  { id: "b10", ic: "⚡", name: "I AM KILLING BUSYness", desc: "Master Certification: Complete the book and the Organization Audit" }
 ];
 
 export interface StoreItem { name: string; cost: number; requiresAudit: boolean; }
@@ -130,6 +131,11 @@ export async function evaluateBadges(supabase: SupabaseClient, userId: string) {
   const readIds = new Set((reads || []).map((r: { chapter_id: number }) => r.chapter_id));
   if ((reflections?.length || 0) >= CHAPTERS.length) await awardBadge(supabase, userId, "b2", have);
   if (readIds.size >= CHAPTERS.length) await awardBadge(supabase, userId, "b8", have);
+
+  // Master Badge: Read the whole book AND generated an audit
+  if (readIds.size >= CHAPTERS.length && company) {
+    await awardBadge(supabase, userId, "b10", have);
+  }
 
   const groupsSeen = new Set<string>();
   readIds.forEach((id) => {

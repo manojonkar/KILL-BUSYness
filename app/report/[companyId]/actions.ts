@@ -3,6 +3,7 @@
 import { createAdminClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { sendInviteEmail } from "@/app/dashboard/sendInvite";
+import { Resend } from "resend";
 
 export async function submitPerceptionGapInvites(formData: FormData) {
   const companyId = formData.get("companyId") as string;
@@ -50,6 +51,48 @@ export async function submitPerceptionGapInvites(formData: FormData) {
 
     if (!error && newParticipant) {
       await sendInviteEmail(email, name, company.name, inviteToken);
+    }
+  }
+
+  revalidatePath(`/report/${companyId}`);
+}
+
+export async function assignSprintTask(formData: FormData) {
+  const companyId = formData.get("companyId") as string;
+  const monthIndex = parseInt(formData.get("monthIndex") as string, 10);
+  const participantId = formData.get("participantId") as string;
+  const taskTitle = formData.get("taskTitle") as string;
+
+  if (!companyId || isNaN(monthIndex) || !participantId) return;
+
+  const adminClient = createAdminClient();
+  
+  // Save assignment
+  const { error } = await adminClient.from("sprint_assignments").upsert({
+    company_id: companyId,
+    month_index: monthIndex,
+    participant_id: participantId,
+    status: "pending"
+  }, { onConflict: "company_id, month_index, participant_id" });
+
+  if (!error) {
+    // Fetch participant info to send email
+    const { data: participant } = await adminClient.from("participants").select("name, email").eq("id", participantId).single();
+    const { data: company } = await adminClient.from("companies").select("name").eq("id", companyId).single();
+    
+    if (participant && participant.email && company) {
+      const key = process.env.RESEND_API_KEY;
+      if (key) {
+        const resend = new Resend(key);
+        const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.killbusyness.com";
+        await resend.emails.send({
+          from: "KILL BUSYness Portal <admin@killbusyness.com>",
+          to: participant.email,
+          cc: "manoj@managementinnovations.co.in",
+          subject: `You have been assigned to lead Sprint Month ${monthIndex + 1}`,
+          html: `<p>Hi ${participant.name},</p><p>You have been assigned by your leadership team at <strong>${company.name}</strong> to own <strong>${taskTitle}</strong> for Month ${monthIndex + 1} of the turnaround sprint.</p><p>Log in to the portal to view the details and track your progress.</p>`
+        }).catch(() => {});
+      }
     }
   }
 
