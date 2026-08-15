@@ -48,9 +48,9 @@ export default async function Header({ active }: { active?: string }) {
           <div className="hud">
             {user && progress ? (
               <>
-                <div className="chip xp">◆ {progress.wallet} MI</div>
+                <div className="chip xp">◆ {progress.wallet} MI Credits</div>
                 <div className="chip level">L{levelFor(progress.xp)} · {levelName(progress.xp)}</div>
-                <div className="chip wallet">Σ {progress.xp} lifetime</div>
+                <div className="chip wallet">Σ {progress.xp} Lifetime</div>
               </>
             ) : (
               <>
