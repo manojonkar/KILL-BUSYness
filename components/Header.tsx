@@ -6,10 +6,10 @@ import { getProgress, levelFor, levelName } from "@/lib/gamification";
 const NAV: { href: string; label: string }[] = [
   { href: "/home", label: "Overview" },
   { href: "/read", label: "Read" },
+  { href: "/stories", label: "Share Your Story" },
   { href: "/dashboard#audit", label: "Organization Audit" },
   { href: "/rewards", label: "Journey & Rewards" },
   { href: "/media", label: "Media Hub" },
-  { href: "/stories", label: "Share Your Story" },
   { href: "/contact", label: "Contact" }
 ];
 
