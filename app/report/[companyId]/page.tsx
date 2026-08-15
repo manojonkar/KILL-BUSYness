@@ -8,6 +8,7 @@ import { DIMENSION_INSIGHTS, SPRINT_CONTENT, scoreBand, questionNote, overallInt
 import { touchStreak, evaluateBadges } from "@/lib/gamification";
 import PerceptionGapCTA from "@/components/PerceptionGapCTA";
 import SprintAssigner from "@/components/SprintAssigner";
+import AlignmentHeatmap from "@/components/AlignmentHeatmap";
 
 /* ── helpers ─────────────────────────────────────────────── */
 function bandLabel(overall: number) {
@@ -173,10 +174,17 @@ export default async function ReportPage({ params }: { params: { companyId: stri
   const scores = computeDimensionScores(participants);
   const qScores = computeQuestionScores(participants);
 
+  const founderParticipants = filterByLevel(participants, "founder");
+  const teamParticipants = participants.filter(p => p.level !== "owner_ceo" && p.level !== "founder"); // Everything else is team
+
   // Slices for the Radar Chart
-  const founderScores = computeDimensionScores(filterByLevel(participants, "founder"));
+  const founderScores = computeDimensionScores(founderParticipants);
   const leadershipScores = computeDimensionScores(filterByLevel(participants, "leadership"));
   const orgScores = computeDimensionScores(filterByLevel(participants, "org"));
+
+  // Slices for the Heatmap
+  const founderQScores = computeQuestionScores(founderParticipants);
+  const teamQScores = computeQuestionScores(teamParticipants);
 
   const chartDatasets: ChartDataset[] = [];
   if (Object.values(founderScores).some(v => v > 0)) {
@@ -368,6 +376,11 @@ export default async function ReportPage({ params }: { params: { companyId: stri
                 })}
               </div>
             )}
+
+            {/* Heatmap */}
+            {chartDatasets.length > 1 && (
+              <AlignmentHeatmap founderQScores={founderQScores} teamQScores={teamQScores} />
+            )}
           </div>
 
           {/* Show the Magnet CTA only to the founder, and only if no team members have responded yet */}
@@ -476,12 +489,62 @@ export default async function ReportPage({ params }: { params: { companyId: stri
                     participants={(participantRows || []).map(p => ({ id: p.id, name: p.name || "Team Member" }))}
                     existingAssignment={assignments?.find(a => a.month_index === i)}
                   />
+                  {i === 0 && (
+                    <div style={{ marginTop: 24, paddingTop: 16, borderTop: "1px solid #e2e8f0", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <div>
+                        <strong style={{ display: "block", fontSize: ".85rem", color: "#0f172a" }}>Need more detail?</strong>
+                        <span style={{ fontSize: ".75rem", color: "#64748b" }}>Generate a printable action plan for this dimension.</span>
+                      </div>
+                      <a href={`/report/${company.id}/playbook/${d.key}`} target="_blank" rel="noopener noreferrer" className="btn btn-outline btn-sm" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                          <polyline points="14 2 14 8 20 8"></polyline>
+                          <line x1="16" y1="13" x2="8" y2="13"></line>
+                          <line x1="16" y1="17" x2="8" y2="17"></line>
+                          <polyline points="10 9 9 9 8 9"></polyline>
+                        </svg>
+                        Generate Playbook
+                      </a>
+                    </div>
+                  )}
                 </div>
               </div>
             );
           })}
           <div style={{ marginTop: 16, padding: "12px 16px", background: "#f8f7f4", borderRadius: 8, fontSize: ".8rem", color: "#64748b" }}>
             <strong style={{ color: "#0f172a" }}>After 90 days:</strong> Re-run this survey. Compare the scores. The change — or the resistance to change — will tell you exactly what to focus on next.
+          </div>
+        </div>
+
+        {/* ── SECTION 5.5: Founder Actions ────────────────────── */}
+        <div className="card" style={{ padding: 26, marginBottom: 20, background: "linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)", border: "1px solid #cbd5e1" }}>
+          <h4 style={{ marginBottom: 4, color: "#0f172a" }}>Your 2 Most Important Actions</h4>
+          <p style={{ fontSize: ".82rem", color: "#475569", marginBottom: 20 }}>
+            Based on your score of {overall}, here is exactly what you should do offline this week to create the most leverage for your organization.
+          </p>
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            <div style={{ background: "#fff", padding: "16px 20px", borderRadius: 8, borderLeft: "4px solid #0E9C74", boxShadow: "0 1px 3px rgba(0,0,0,0.05)" }}>
+              <div style={{ fontSize: ".75rem", textTransform: "uppercase", letterSpacing: ".05em", color: "#0E9C74", fontWeight: 700, marginBottom: 4 }}>Action 1</div>
+              <strong style={{ fontSize: ".95rem", color: "#0f172a" }}>
+                {overall < 50 ? "Organize a KILL BUSYness Workshop" : "Study the book with your leadership team"}
+              </strong>
+              <p style={{ fontSize: ".85rem", color: "#475569", margin: "4px 0 0" }}>
+                {overall < 50 
+                  ? "Your organization is currently operating with massive friction. You need a dedicated, facilitated intervention to reset the operational baseline." 
+                  : "You have a solid foundation, but the team needs a shared language. Have every leader read the book and discuss one chapter per week."}
+              </p>
+            </div>
+            <div style={{ background: "#fff", padding: "16px 20px", borderRadius: 8, borderLeft: "4px solid #D9A441", boxShadow: "0 1px 3px rgba(0,0,0,0.05)" }}>
+              <div style={{ fontSize: ".75rem", textTransform: "uppercase", letterSpacing: ".05em", color: "#D9A441", fontWeight: 700, marginBottom: 4 }}>Action 2</div>
+              <strong style={{ fontSize: ".95rem", color: "#0f172a" }}>
+                {overall < 50 ? "Align your executive team on the ROAR framework" : "Create a 30-day upgrade plan and re-audit"}
+              </strong>
+              <p style={{ fontSize: ".85rem", color: "#475569", margin: "4px 0 0" }}>
+                {overall < 50 
+                  ? "Before pushing changes down, ensure your top leaders completely agree on the Reflect, Own, Assert, and Run phases for your core workflows." 
+                  : "Draft a specific 30-day intervention based on your weakest dimension. At the end of the month, re-run this audit to prove the needle moved."}
+              </p>
+            </div>
           </div>
         </div>
 

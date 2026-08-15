@@ -42,18 +42,19 @@ export async function GET(req: NextRequest) {
           >
             <h1
               style={{
-                fontSize: 80,
+                fontSize: 64,
                 fontWeight: 900,
                 letterSpacing: "-0.02em",
                 margin: 0,
                 color: "#0E9C74",
                 textTransform: "uppercase",
                 textAlign: "center",
+                maxWidth: 900,
               }}
             >
-              I AM KILLING
+              I am in the
               <br />
-              BUSYness
+              KILL BUSYness movement.
             </h1>
             <p
               style={{
