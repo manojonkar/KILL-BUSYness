@@ -26,6 +26,28 @@ export async function GET(_req: Request, { params }: { params: { name: string } 
     });
   }
 
+  const jpgPath = path.join(process.cwd(), "public", "img", `${params.name}.jpg`);
+  if (fs.existsSync(jpgPath)) {
+    const buf = fs.readFileSync(jpgPath);
+    return new Response(buf, {
+      headers: {
+        "Content-Type": "image/jpeg",
+        "Cache-Control": "public, max-age=31536000, immutable"
+      }
+    });
+  }
+
+  const jpegPath = path.join(process.cwd(), "public", "img", `${params.name}.jpeg`);
+  if (fs.existsSync(jpegPath)) {
+    const buf = fs.readFileSync(jpegPath);
+    return new Response(buf, {
+      headers: {
+        "Content-Type": "image/jpeg",
+        "Cache-Control": "public, max-age=31536000, immutable"
+      }
+    });
+  }
+
   const supabase = createClient();
   const { data } = await supabase
     .from("brand_assets")
