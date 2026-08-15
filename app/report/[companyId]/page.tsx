@@ -1,30 +1,33 @@
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import Header from "@/components/Header";
 import PrintButton from "./PrintButton";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { DIMENSIONS } from "@/lib/dimensions";
 import { computeDimensionScores, computeQuestionScores, overallScore, answersArrayFromRows, type ParticipantAnswers } from "@/lib/scoring";
 import { weakestDimensions, strongestDimensions, overallAnalysis, actionPlanText, scoreColor } from "@/lib/suggestions";
 import { touchStreak, evaluateBadges } from "@/lib/gamification";
 
 export default async function ReportPage({ params }: { params: { companyId: string } }) {
+  // Try session-based client first (for logged-in admin)
   const supabase = createClient();
-  const {
-    data: { user }
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  const { data: { user } } = await supabase.auth.getUser();
 
-  const { data: company } = await supabase.from("companies").select("*").eq("id", params.companyId).maybeSingle();
+  // Always use admin client to fetch report data — makes the link work from email too
+  const adminClient = createAdminClient();
+
+  const { data: company } = await adminClient.from("companies").select("*").eq("id", params.companyId).maybeSingle();
   if (!company) notFound();
-  if (company.admin_user_id !== user.id) redirect("/dashboard");
 
-  await touchStreak(supabase);
-  await evaluateBadges(supabase, user.id);
+  // Only run gamification for the actual company admin
+  if (user && company.admin_user_id === user.id) {
+    await touchStreak(supabase);
+    await evaluateBadges(supabase, user.id);
+  }
 
-  const { data: participantRows } = await supabase.from("participants").select("id, status").eq("company_id", company.id);
+  const { data: participantRows } = await adminClient.from("participants").select("id, status").eq("company_id", company.id);
   const participantIds = (participantRows || []).map((p) => p.id);
 
-  const { data: responseRows } = await supabase
+  const { data: responseRows } = await adminClient
     .from("responses")
     .select("participant_id, question_index, answer")
     .in("participant_id", participantIds.length ? participantIds : ["00000000-0000-0000-0000-000000000000"]);
