@@ -149,3 +149,48 @@ export async function placeOrder(formData: FormData) {
 
   redirect(`/buy?ref=${encodeURIComponent(ref)}&format=${formatKey}`);
 }
+
+export async function submitTransactionId(formData: FormData) {
+  const ref = String(formData.get("ref") || "").trim();
+  const utr = String(formData.get("utr") || "").trim();
+  const formatKey = String(formData.get("format") || "paperback").trim();
+
+  if (!ref) redirect("/buy");
+
+  const supabase = createClient();
+  
+  // Fetch existing order details
+  const { data: order } = await supabase
+    .from("book_orders")
+    .select("notes, amount, name, email")
+    .eq("ref", ref)
+    .maybeSingle();
+
+  if (order) {
+    const updatedNotes = order.notes 
+      ? `${order.notes}, UTR: ${utr}`
+      : `UTR: ${utr}`;
+
+    await supabase
+      .from("book_orders")
+      .update({ notes: updatedNotes })
+      .eq("ref", ref);
+
+    // Send notification email to admin about UTR submission
+    const key = process.env.RESEND_API_KEY;
+    if (key && utr) {
+      const resend = new Resend(key);
+      try {
+        await resend.emails.send({
+          from: "KILL BUSYness <admin@killbusyness.com>",
+          to: "admin@managementinnovations.co.in",
+          subject: `Payment update for order ${ref} — UTR: ${utr}`,
+          html: `<p>Payment details updated for order <strong>${ref}</strong> (${order.name}, ${order.email}).</p>` +
+                `<p><strong>UPI Transaction Reference / UTR:</strong> ${utr}</p>`
+        });
+      } catch {}
+    }
+  }
+
+  redirect(`/buy?ref=${encodeURIComponent(ref)}&paid=true&format=${formatKey}`);
+}

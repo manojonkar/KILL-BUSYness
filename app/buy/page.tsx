@@ -2,7 +2,7 @@ import Link from "next/link";
 import Header from "@/components/Header";
 import { createClient } from "@/lib/supabase/server";
 import { FORMATS, getSettings } from "@/lib/book";
-import { placeOrder } from "./actions";
+import { placeOrder, submitTransactionId } from "./actions";
 import OrderForm from "./OrderForm";
 
 const ORDER = ["ebook", "paperback", "hardcover"];
@@ -123,16 +123,33 @@ export default async function BuyPage({
                 : "Once payment is confirmed we email the eBook to the address you gave."}
             </p>
 
-            {/* I have completed UPI payment confirmation button */}
-            <div style={{ borderTop: "1px solid var(--line)", paddingTop: 20 }}>
-              <Link 
-                href={`/buy?ref=${searchParams.ref}&paid=true`} 
-                className="btn btn-teal"
-                style={{ display: "inline-block" }}
-              >
-                I have completed my UPI payment
-              </Link>
-            </div>
+            {/* Form to submit UPI Transaction ID / UTR */}
+            <form action={submitTransactionId} style={{ borderTop: "1px solid var(--line)", paddingTop: 20 }}>
+              <input type="hidden" name="ref" value={searchParams.ref} />
+              <input type="hidden" name="format" value={fmt.key} />
+              <label style={{ display: "block", fontSize: ".84rem", fontWeight: 600, color: "var(--ink)", marginBottom: 6 }}>
+                Enter UPI Transaction ID / Ref No. / UTR (optional)
+              </label>
+              <p style={{ fontSize: ".76rem", color: "var(--ink-soft)", marginBottom: 12 }}>
+                Pasting the transaction ID from your UPI app helps us verify your payment much faster.
+              </p>
+              <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                <input 
+                  name="utr" 
+                  placeholder="e.g. 12-digit UPI Ref / UTR number"
+                  style={{ 
+                    flex: "1 1 240px", 
+                    padding: "8px 12px", 
+                    borderRadius: 6, 
+                    border: "1px solid var(--line, #e2e8f0)",
+                    fontSize: ".88rem"
+                  }}
+                />
+                <button className="btn btn-teal" type="submit">
+                  I have paid
+                </button>
+              </div>
+            </form>
           </div>
         </main>
       </>
