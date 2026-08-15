@@ -56,6 +56,8 @@ export async function placeOrder(formData: FormData) {
       ref,
       format: fmt.key,
       amount: finalPrice,
+      unit_price: basePrice,
+      quantity,
       name,
       company: company || null,
       email,
