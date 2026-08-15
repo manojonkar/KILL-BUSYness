@@ -9,7 +9,7 @@ import { scoreColor } from "@/lib/suggestions";
 
 export const dynamic = "force-dynamic";
 
-type Tab = "orders" | "companies" | "surveys" | "users" | "stories" | "reports";
+type Tab = "orders" | "companies" | "surveys" | "users" | "stories" | "reports" | "contact";
 
 export default async function AdminDashboardPage({
   searchParams
@@ -38,7 +38,8 @@ export default async function AdminDashboardPage({
     { data: chapterReadRows },
     { data: reflectionRows },
     { data: storiesRows },
-    { data: allResponseRows }
+    { data: allResponseRows },
+    { data: contactRows }
   ] = await Promise.all([
     adminClient
       .from("book_orders")
@@ -57,13 +58,15 @@ export default async function AdminDashboardPage({
     adminClient.from("user_chapter_reads").select("*"),
     adminClient.from("user_reflections").select("*"),
     adminClient.from("stories").select("*").order("created_at", { ascending: false }),
-    adminClient.from("responses").select("participant_id, question_index, answer")
+    adminClient.from("responses").select("participant_id, question_index, answer"),
+    adminClient.from("contact_messages").select("*").order("created_at", { ascending: false })
   ]);
 
   const allOrders = orders || [];
   const allCompanies = companies || [];
   const allParticipants = participants || [];
   const allStories = storiesRows || [];
+  const allContactMessages = contactRows || [];
 
   const pendingStories = allStories.filter((s) => !s.approved);
   const liveStories = allStories.filter((s) => s.approved);
@@ -268,6 +271,20 @@ export default async function AdminDashboardPage({
             }}
           >
             📈 Audit Reports
+          </Link>
+          <Link
+            href="/admin?tab=contact"
+            style={{
+              padding: "10px 18px 8px",
+              textDecoration: "none",
+              fontWeight: 600,
+              fontSize: "0.92rem",
+              color: currentTab === "contact" ? "var(--teal-ink, #0f766e)" : "var(--ink-soft)",
+              borderBottom: currentTab === "contact" ? "3px solid var(--teal)" : "3px solid transparent",
+              transition: "all 0.15s ease"
+            }}
+          >
+            ✉️ Contact ({allContactMessages.length})
           </Link>
         </div>
 
@@ -846,6 +863,66 @@ export default async function AdminDashboardPage({
               </div>
             );
           })()}
+
+          {/* TAB: Contact Messages */}
+          {currentTab === "contact" && (
+            <div>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+                <div>
+                  <h3 style={{ margin: 0 }}>Contact Inbox</h3>
+                  <p style={{ margin: "4px 0 0", fontSize: "0.82rem", color: "var(--ink-soft)" }}>
+                    {allContactMessages.length} message{allContactMessages.length !== 1 ? "s" : ""} received via the contact form · Reply by clicking the email address
+                  </p>
+                </div>
+              </div>
+
+              {allContactMessages.length === 0 ? (
+                <p style={{ color: "var(--ink-faint)", fontSize: "0.9rem" }}>No contact messages yet. Submissions from the contact form will appear here.</p>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                  {allContactMessages.map((msg: any) => {
+                    const d = new Date(msg.created_at);
+                    const dateStr = d.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+                    const timeStr = d.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" });
+                    return (
+                      <div key={msg.id} style={{ border: "1px solid var(--line)", borderRadius: 8, overflow: "hidden", background: "#fff" }}>
+                        {/* Header */}
+                        <div style={{ padding: "12px 18px", background: "#f8f7f4", borderBottom: "1px solid var(--line)", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                            <div style={{ width: 36, height: 36, borderRadius: "50%", background: "linear-gradient(135deg,#0f172a,#1e3a5f)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 700, fontSize: "0.9rem", flexShrink: 0 }}>
+                              {(msg.name || "?")[0].toUpperCase()}
+                            </div>
+                            <div>
+                              <div style={{ fontWeight: 700, fontSize: "0.9rem", color: "#0f172a" }}>{msg.name}</div>
+                              <a href={`mailto:${msg.email}?subject=Re: Your message to KILL BUSYness`}
+                                style={{ fontSize: "0.78rem", color: "#0E9C74", textDecoration: "none" }}>
+                                {msg.email} ↗
+                              </a>
+                            </div>
+                          </div>
+                          <div style={{ fontSize: "0.75rem", color: "var(--ink-faint)", textAlign: "right" }}>
+                            <div>{dateStr}</div>
+                            <div>{timeStr}</div>
+                          </div>
+                        </div>
+                        {/* Message body */}
+                        <div style={{ padding: "14px 18px", fontSize: "0.85rem", color: "#334155", lineHeight: 1.7, whiteSpace: "pre-wrap" }}>
+                          {msg.message}
+                        </div>
+                        {/* Quick reply */}
+                        <div style={{ padding: "10px 18px", borderTop: "1px solid var(--line)", background: "#fafaf8" }}>
+                          <a href={`mailto:${msg.email}?subject=Re: Your message to KILL BUSYness`}
+                            style={{ fontSize: "0.78rem", fontWeight: 600, color: "var(--teal-ink, #0f766e)", textDecoration: "none" }}>
+                            ↩ Reply to {msg.name}
+                          </a>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
 
         </div>
       </main>
