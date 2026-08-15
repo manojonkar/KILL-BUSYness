@@ -10,7 +10,7 @@ const ORDER = ["ebook", "paperback", "hardcover"];
 export default async function BuyPage({
   searchParams
 }: {
-  searchParams: { format?: string; error?: string; ref?: string };
+  searchParams: { format?: string; error?: string; ref?: string; paid?: string };
 }) {
   const supabase = createClient();
   const settings = await getSettings(supabase);
@@ -33,13 +33,49 @@ export default async function BuyPage({
     }
   }
 
+  // Thank You page after they pay through UPI QR Code
+  if (searchParams?.ref && searchParams.paid === "true") {
+    return (
+      <>
+        <Header active="" />
+        <main>
+          <div className="section-head">
+            <span className="eyebrow">Order Placed</span>
+            <h2>Thank you for your payment.</h2>
+            <p>Your order reference is <strong>{searchParams.ref}</strong>.</p>
+          </div>
+          <div className="card" style={{ padding: 30, maxWidth: 620 }}>
+            <h3 style={{ marginBottom: 12, color: "var(--teal-ink, #0f766e)" }}>✔ Payment Details Submitted</h3>
+            <p style={{ fontSize: ".92rem", color: "var(--ink-soft)", marginBottom: 18 }}>
+              We have recorded your payment status for reference <strong>{searchParams.ref}</strong>.
+            </p>
+            <p style={{ fontSize: ".92rem", color: "var(--ink-soft)", marginBottom: 18 }}>
+              Please check your email inbox (and spam folder) for the confirmatory email containing your order summary. Once we confirm the transaction with our bank, your order status will be updated.
+            </p>
+            <p style={{ fontSize: ".86rem", color: "var(--ink-faint)", borderTop: "1px solid var(--line)", paddingTop: 14 }}>
+              {fmt.physical
+                ? "Once payment is verified, your book will be couriered to the address you provided."
+                : "Once payment is verified, the eBook copy will be emailed to your address."}
+            </p>
+            <div style={{ marginTop: 24 }}>
+              <Link href="/home" className="btn btn-dark btn-sm">
+                Back to Home
+              </Link>
+            </div>
+          </div>
+        </main>
+      </>
+    );
+  }
+
+  // QR Code payment details page
   if (searchParams?.ref) {
     return (
       <>
         <Header active="" />
         <main>
           <div className="section-head">
-            <span className="eyebrow">Order placed</span>
+            <span className="eyebrow">Order Placed</span>
             <h2>Almost there — one payment to go.</h2>
             <p>Your order reference is <strong>{searchParams.ref}</strong>. We&apos;ve emailed you a copy.</p>
           </div>
@@ -81,11 +117,22 @@ export default async function BuyPage({
               <strong>Important:</strong> put <strong>{searchParams.ref}</strong> in the payment note so we can match your
               payment to your order.
             </p>
-            <p style={{ fontSize: ".86rem", color: "var(--ink-soft)" }}>
+            <p style={{ fontSize: ".86rem", color: "var(--ink-soft)", marginBottom: 20 }}>
               {fmt.physical
                 ? "Once payment is confirmed we courier your copy to the address you gave."
                 : "Once payment is confirmed we email the eBook to the address you gave."}
             </p>
+
+            {/* I have completed UPI payment confirmation button */}
+            <div style={{ borderTop: "1px solid var(--line)", paddingTop: 20 }}>
+              <Link 
+                href={`/buy?ref=${searchParams.ref}&paid=true`} 
+                className="btn btn-teal"
+                style={{ display: "inline-block" }}
+              >
+                I have completed my UPI payment
+              </Link>
+            </div>
           </div>
         </main>
       </>
