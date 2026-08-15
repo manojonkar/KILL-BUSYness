@@ -4,8 +4,6 @@ import SurveyClient from "./SurveyClient";
 import { createClient } from "@/lib/supabase/server";
 import { DIMENSIONS } from "@/lib/dimensions";
 import { computeDimensionScores, overallScore } from "@/lib/scoring";
-import { weakestDimensions } from "@/lib/suggestions";
-import { PARTICIPANT_TIPS } from "@/lib/insights";
 
 export default async function SurveyPage({ params }: { params: { token: string } }) {
   const supabase = createClient();
@@ -26,16 +24,7 @@ export default async function SurveyPage({ params }: { params: { token: string }
     const participant = { participantId: "me", level: "employee", answers: arr };
     const scores = computeDimensionScores([participant]);
     const overall = overallScore(scores);
-    const weakest = weakestDimensions([participant], 1)[0];
-    
-    // 3. Get insights for their weakest dimension
-    let tips = null;
-    let chapterText = "";
-    if (weakest) {
-      tips = PARTICIPANT_TIPS[weakest.key];
-      const dimensionObj = DIMENSIONS.find(d => d.key === weakest.key);
-      chapterText = dimensionObj ? `Chapter ${dimensionObj.chapter} — ${dimensionObj.chapterTitle}` : "the relevant chapter";
-    }
+    // 3. (Removed single weakest logic as per new requirements)
 
     return (
       <>
@@ -58,23 +47,47 @@ export default async function SurveyPage({ params }: { params: { token: string }
             </div>
           </div>
 
-          {tips && (
-            <div className="card" style={{ padding: 32 }}>
-              <h3 style={{ marginBottom: 16 }}>Your High-Leverage Opportunity</h3>
-              <p style={{ fontSize: ".9rem", color: "var(--ink-soft)", marginBottom: 24, lineHeight: 1.6 }}>
-                Based on your answers, your biggest opportunity to protect your time and energy is in <strong>{weakest.label}</strong>. Here are 4 things you can do to improve this immediately:
-              </p>
-              
-              <div style={{ background: "#f8fafc", padding: 24, borderRadius: 8, borderLeft: "4px solid #0E9C74" }}>
-                <ol style={{ paddingLeft: 20, margin: 0, fontSize: "1rem", color: "#334155", lineHeight: 1.7 }}>
-                  <li style={{ marginBottom: 12 }}>{tips.tip1}</li>
-                  <li style={{ marginBottom: 12 }}>{tips.tip2}</li>
-                  <li style={{ marginBottom: 12 }}>Study <strong>{chapterText}</strong> to give you more insights.</li>
-                  <li>Discuss this topic with your colleagues and share here what you got from that discussion.</li>
-                </ol>
-              </div>
+          <div className="card" style={{ padding: 32 }}>
+            <h3 style={{ marginBottom: 16 }}>Your Dimension Breakdown</h3>
+            <p style={{ fontSize: ".9rem", color: "var(--ink-soft)", marginBottom: 24, lineHeight: 1.6 }}>
+              Here is how you scored across all 10 dimensions of KILL BUSYness. Use this feedback to guide your next actions.
+            </p>
+            
+            <div style={{ border: "1px solid #e2e8f0", borderRadius: 8, overflow: "hidden" }}>
+              {Object.entries(scores).map(([key, score], i) => {
+                const dimensionObj = DIMENSIONS.find(d => d.key === key);
+                const chapterText = dimensionObj ? `chapter no. ${dimensionObj.chapter}` : "the relevant chapter";
+                let message = "";
+                let color = "";
+                if (score >= 70) {
+                  message = "Leverage this Strength";
+                  color = "#0E9C74"; // Green
+                } else if (score >= 50) {
+                  message = "You are good. Get coached and be Excellent.";
+                  color = "#D9A441"; // Amber
+                } else {
+                  message = `Please study ${chapterText}`;
+                  color = "#FF5A3C"; // Red
+                }
+
+                return (
+                  <div key={key} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 20px", borderBottom: i === Object.keys(scores).length - 1 ? "none" : "1px solid #e2e8f0", background: i % 2 === 0 ? "#fff" : "#f8fafc" }}>
+                    <div>
+                      <strong style={{ display: "block", color: "#0f172a", marginBottom: 4 }}>{dimensionObj?.label}</strong>
+                      <span style={{ color: color, fontSize: ".85rem", fontWeight: 600 }}>{message}</span>
+                    </div>
+                    <div style={{ fontWeight: 800, color: "#334155", fontSize: "1.1rem" }}>{score}</div>
+                  </div>
+                );
+              })}
             </div>
-          )}
+
+            <div style={{ marginTop: 32, textAlign: "center", background: "#f1f5f9", padding: 24, borderRadius: 8 }}>
+              <p style={{ margin: 0, color: "#334155", fontWeight: 600, fontSize: "1.05rem" }}>
+                Come back and take the audit again after 30 days to measure your progress.
+              </p>
+            </div>
+          </div>
         </main>
       </>
     );
