@@ -326,8 +326,8 @@ export const PARTICIPANT_TIPS: Record<string, { tip1: string; tip2: string }> = 
     tip2: "Practice the 'Law of Two Feet'—if you are in a meeting where you are neither adding nor receiving value, politely excuse yourself."
   },
   execution: {
-    tip1: "Reduce wasting time and energy in follow ups by finishing what you start before picking up the next task.",
-    tip2: "Help others and yourself by honouring your commitments and being proactive in action. Do what you said you would do, when you said you would do it."
+    tip1: "Reduce wasting time and energy in follow ups.",
+    tip2: "Help others and yourself by honouring your commitments and being proactive in action."
   },
   ownership: {
     tip1: "Stop bringing problems to your manager. This week, bring a problem accompanied by your best proposed solution.",
