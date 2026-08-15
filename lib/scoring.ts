@@ -2,6 +2,7 @@ import { DIMENSIONS, FLAT_QUESTIONS, TOTAL_QUESTIONS } from "./dimensions";
 
 export interface ParticipantAnswers {
   participantId: string;
+  level?: string;
   answers: number[]; // length TOTAL_QUESTIONS, -1 = unanswered, 0-5 = Likert
 }
 
@@ -68,3 +69,10 @@ export function answersArrayFromRows(rows: { question_index: number; answer: num
   });
   return arr;
 }
+
+export function filterByLevel(participants: ParticipantAnswers[], group: "founder" | "leadership" | "org"): ParticipantAnswers[] {
+  if (group === "founder") return participants.filter(p => p.level === "Owner / CEO");
+  if (group === "leadership") return participants.filter(p => p.level === "Senior Leadership" || p.level === "Manager");
+  return participants.filter(p => p.level === "Employee" || !p.level || p.level.trim() === "");
+}
+

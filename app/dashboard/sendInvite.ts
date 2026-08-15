@@ -10,7 +10,7 @@ const VALID_ROLES: Record<string, string> = {
   employee: "employee"
 };
 
-async function sendInviteEmail(to: string, name: string, companyName: string, token: string) {
+export async function sendInviteEmail(toEmail: string, participantName: string, companyName: string, token: string) {
   const key = process.env.RESEND_API_KEY;
   if (!key) return;
   try {
@@ -18,10 +18,10 @@ async function sendInviteEmail(to: string, name: string, companyName: string, to
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.killbusyness.com";
     await resend.emails.send({
       from: "KILL BUSYness Portal <admin@killbusyness.com>",
-      to,
+      to: toEmail,
       cc: "manoj@managementinnovations.co.in",
       subject: `${companyName} invites you to the KILL BUSYness Organization Audit`,
-      html: `<p>Hi ${name || "there"},</p><p><strong>${companyName}</strong> has invited you to take part in the KILL BUSYness Organization Audit — a short, confidential diagnostic of how your organization really runs.</p><p><a href="${siteUrl}/survey/${token}">Start the survey</a></p><p>It takes about 10 minutes.</p>`
+      html: `<p>Hi ${participantName || "there"},</p><p><strong>${companyName}</strong> has invited you to take part in the KILL BUSYness Organization Audit — a short, confidential diagnostic of how your organization really runs.</p><p><a href="${siteUrl}/survey/${token}">Start the survey</a></p><p>It takes about 10 minutes.</p>`
     });
   } catch {
   }

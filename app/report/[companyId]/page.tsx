@@ -2,10 +2,11 @@ import { notFound } from "next/navigation";
 import Header from "@/components/Header";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { DIMENSIONS } from "@/lib/dimensions";
-import { computeDimensionScores, computeQuestionScores, overallScore, answersArrayFromRows, type ParticipantAnswers } from "@/lib/scoring";
+import { computeDimensionScores, computeQuestionScores, overallScore, answersArrayFromRows, type ParticipantAnswers, filterByLevel } from "@/lib/scoring";
 import { weakestDimensions, strongestDimensions, scoreColor } from "@/lib/suggestions";
 import { DIMENSION_INSIGHTS, SPRINT_CONTENT, scoreBand, questionNote, overallInterpretation } from "@/lib/insights";
 import { touchStreak, evaluateBadges } from "@/lib/gamification";
+import PerceptionGapCTA from "@/components/PerceptionGapCTA";
 
 /* ── helpers ─────────────────────────────────────────────── */
 function bandLabel(overall: number) {
@@ -15,7 +16,9 @@ function bandLabel(overall: number) {
 }
 
 /* ── radar chart (pure SVG, 10 dimensions) ───────────────── */
-function RadarChart({ scores }: { scores: Record<string, number> }) {
+type ChartDataset = { id: string; label: string; scores: Record<string, number>; color: string; fill?: string; dash?: string };
+
+function RadarChart({ datasets }: { datasets: ChartDataset[] }) {
   const cx = 150, cy = 150, R = 110;
   const keys = DIMENSIONS.map(d => d.key);
   const n = keys.length;
@@ -34,9 +37,6 @@ function RadarChart({ scores }: { scores: Record<string, number> }) {
     sustain: "Sustaining"
   };
 
-  const dataPoints = keys.map((k, i) => pt(i, (scores[k] ?? 0) / 100));
-  const polygon = dataPoints.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" ");
-
   return (
     <svg viewBox="0 0 300 300" width="300" height="300" style={{ overflow: "visible" }}>
       {/* Background rings */}
@@ -54,14 +54,32 @@ function RadarChart({ scores }: { scores: Record<string, number> }) {
         const outer = pt(i, 1);
         return <line key={i} x1={cx} y1={cy} x2={outer.x.toFixed(1)} y2={outer.y.toFixed(1)} stroke="#e2e0d8" strokeWidth={0.8} />;
       })}
-      {/* Data polygon */}
-      <polygon points={polygon} fill={`rgba(14,156,116,0.15)`} stroke="#0E9C74" strokeWidth={2} strokeLinejoin="round" />
-      {/* Data points */}
-      {dataPoints.map((p, i) => {
-        const s = scores[keys[i]] ?? 0;
-        const c = s >= 70 ? "#0E9C74" : s >= 40 ? "#D9A441" : "#FF5A3C";
-        return <circle key={i} cx={p.x.toFixed(1)} cy={p.y.toFixed(1)} r={4} fill={c} stroke="#fff" strokeWidth={1.5} />;
+      
+      {/* Data polygons */}
+      {datasets.map(ds => {
+        const dataPoints = keys.map((k, i) => pt(i, (ds.scores[k] ?? 0) / 100));
+        const polygonStr = dataPoints.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" ");
+        return (
+          <g key={ds.id}>
+            <polygon 
+              points={polygonStr} 
+              fill={ds.fill || "none"} 
+              stroke={ds.color} 
+              strokeWidth={ds.dash ? 1.5 : 2} 
+              strokeDasharray={ds.dash || "none"}
+              strokeLinejoin="round" 
+            />
+            {/* Data points */}
+            {dataPoints.map((p, i) => {
+              const s = ds.scores[keys[i]] ?? 0;
+              // If it's the primary (founder) dataset, use conditional colors, otherwise use dataset color
+              const c = ds.id === "primary" ? (s >= 70 ? "#0E9C74" : s >= 40 ? "#D9A441" : "#FF5A3C") : ds.color;
+              return <circle key={i} cx={p.x.toFixed(1)} cy={p.y.toFixed(1)} r={3.5} fill={c} stroke="#fff" strokeWidth={1} />;
+            })}
+          </g>
+        );
       })}
+
       {/* Labels */}
       {keys.map((k, i) => {
         const labelR = R + 22;
@@ -99,7 +117,7 @@ export default async function ReportPage({ params }: { params: { companyId: stri
     await evaluateBadges(supabase, user.id);
   }
 
-  const { data: participantRows } = await adminClient.from("participants").select("id, status").eq("company_id", company.id);
+  const { data: participantRows } = await adminClient.from("participants").select("id, status, level").eq("company_id", company.id);
   const participantIds = (participantRows || []).map(p => p.id);
 
   const { data: responseRows } = await adminClient
@@ -114,14 +132,38 @@ export default async function ReportPage({ params }: { params: { companyId: stri
     byParticipant.set(r.participant_id, arr);
   });
 
-  const participants: ParticipantAnswers[] = participantIds.map(id => ({
-    participantId: id,
-    answers: answersArrayFromRows(byParticipant.get(id) || [])
-  }));
+  const participants: ParticipantAnswers[] = participantIds.map(id => {
+    const pRow = (participantRows || []).find(r => r.id === id);
+    return {
+      participantId: id,
+      level: pRow?.level,
+      answers: answersArrayFromRows(byParticipant.get(id) || [])
+    };
+  });
 
   const respCount = participants.filter(p => p.answers.some(a => a >= 0)).length;
   const scores = computeDimensionScores(participants);
   const qScores = computeQuestionScores(participants);
+
+  // Slices for the Radar Chart
+  const founderScores = computeDimensionScores(filterByLevel(participants, "founder"));
+  const leadershipScores = computeDimensionScores(filterByLevel(participants, "leadership"));
+  const orgScores = computeDimensionScores(filterByLevel(participants, "org"));
+
+  const chartDatasets: ChartDataset[] = [];
+  if (Object.values(founderScores).some(v => v > 0)) {
+    chartDatasets.push({ id: "primary", label: "Your Perception", scores: founderScores, color: "#0E9C74", fill: "rgba(14,156,116,0.15)" });
+  } else {
+    // fallback if founder hasn't taken it but others have
+    chartDatasets.push({ id: "primary", label: "Organization Profile", scores: scores, color: "#0E9C74", fill: "rgba(14,156,116,0.15)" });
+  }
+  if (Object.values(leadershipScores).some(v => v > 0)) {
+    chartDatasets.push({ id: "leadership", label: "Leadership Reality", scores: leadershipScores, color: "#ea580c", dash: "6,4" });
+  }
+  if (Object.values(orgScores).some(v => v > 0)) {
+    chartDatasets.push({ id: "org", label: "Org Reality", scores: orgScores, color: "#64748b", dash: "2,4" });
+  }
+
   const overall = overallScore(scores);
   const weakest = weakestDimensions(participants, 3);
   const strongest = strongestDimensions(participants, 2);
@@ -237,10 +279,62 @@ export default async function ReportPage({ params }: { params: { companyId: stri
           {/* Radar */}
           <div className="card" style={{ padding: 24, display: "flex", flexDirection: "column", alignItems: "center" }}>
             <div style={{ fontSize: ".7rem", fontWeight: 700, letterSpacing: ".08em", textTransform: "uppercase", color: "var(--ink-faint)", marginBottom: 16 }}>
-              Organizational Profile — All 10 Dimensions
+              {chartDatasets.length > 1 ? "Perception Gap Analysis" : "Organizational Profile — All 10 Dimensions"}
             </div>
-            <RadarChart scores={scores} />
+            <RadarChart datasets={chartDatasets} />
+            
+            {/* Chart Legend */}
+            {chartDatasets.length > 1 && (
+              <div style={{ display: "flex", gap: 16, marginTop: 12, fontSize: ".7rem", fontWeight: 500 }}>
+                {chartDatasets.map(ds => (
+                  <div key={ds.id} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    <div style={{ 
+                      width: 14, height: 3, background: ds.color, 
+                      borderTop: ds.dash ? `2px dashed #fff` : "none" // faux dash
+                    }} />
+                    <span style={{ color: ds.color }}>{ds.label}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Perception Gap Blind Spots */}
+            {chartDatasets.length > 1 && (
+              <div style={{ marginTop: 24, width: "100%" }}>
+                {DIMENSIONS.map(d => {
+                  const fScore = founderScores[d.key] || 0;
+                  const lScore = leadershipScores[d.key] || 0;
+                  const oScore = orgScores[d.key] || 0;
+                  
+                  // A blind spot is when founder is > 20 points higher than the lowest team score
+                  const lowestTeamScore = Math.min(lScore > 0 ? lScore : 100, oScore > 0 ? oScore : 100);
+                  if (lowestTeamScore === 100) return null; // no team data
+                  
+                  const gap = fScore - lowestTeamScore;
+                  if (gap >= 20) {
+                    return (
+                      <div key={`gap-${d.key}`} style={{ background: "#fff5f5", borderLeft: "3px solid #ef4444", padding: "12px 16px", borderRadius: "0 6px 6px 0", marginBottom: 12 }}>
+                        <div style={{ fontSize: ".7rem", fontWeight: 700, color: "#ef4444", textTransform: "uppercase", letterSpacing: ".05em", marginBottom: 4 }}>
+                          🚨 Perception Blind Spot: {d.label}
+                        </div>
+                        <p style={{ fontSize: ".82rem", color: "#7f1d1d", margin: 0, lineHeight: 1.5 }}>
+                          You rated {d.label} an <strong>{fScore}</strong>, but your team rated it a <strong>{lowestTeamScore}</strong>. This signifies a major disconnect between intent at the top and reality on the ground.
+                        </p>
+                      </div>
+                    );
+                  }
+                  return null;
+                })}
+              </div>
+            )}
           </div>
+
+          {/* Show the Magnet CTA only to the founder, and only if no team members have responded yet */}
+          {(user && company.admin_user_id === user.id && chartDatasets.length === 1) && (
+            <div style={{ gridColumn: "1 / -1" }}>
+              <PerceptionGapCTA companyId={company.id} seatsRemaining={company.seats_purchased - participantIds.length} />
+            </div>
+          )}
 
           {/* Dimension bars */}
           <div className="card" style={{ padding: 24 }}>
