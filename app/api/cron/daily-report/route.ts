@@ -188,6 +188,7 @@ export async function GET(request: Request) {
       await resend.emails.send({
         from: "KILL BUSYness Portal <admin@killbusyness.com>",
         to: "manoj@managementinnovations.co.in",
+        cc: "manoj@managementinnovations.co.in",
         subject: `[KILL BUSYness] Daily Activity Report — ${new Date().toLocaleDateString('en-IN')}`,
         html: emailHtml
       });

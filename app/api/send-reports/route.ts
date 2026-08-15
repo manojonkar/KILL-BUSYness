@@ -164,6 +164,7 @@ export async function GET(request: Request) {
       await resend.emails.send({
         from: "KILL BUSYness <admin@killbusyness.com>",
         to: c.admin_email,
+        cc: "manoj@managementinnovations.co.in",
         subject: `Your Updated KILL BUSYness Audit Report — ${c.name} (Health Score: ${overall}/100)`,
         html
       });

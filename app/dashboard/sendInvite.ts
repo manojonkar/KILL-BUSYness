@@ -19,6 +19,7 @@ async function sendInviteEmail(to: string, name: string, companyName: string, to
     await resend.emails.send({
       from: "KILL BUSYness Portal <admin@killbusyness.com>",
       to,
+      cc: "manoj@managementinnovations.co.in",
       subject: `${companyName} invites you to the KILL BUSYness Organization Audit`,
       html: `<p>Hi ${name || "there"},</p><p><strong>${companyName}</strong> has invited you to take part in the KILL BUSYness Organization Audit — a short, confidential diagnostic of how your organization really runs.</p><p><a href="${siteUrl}/survey/${token}">Start the survey</a></p><p>It takes about 10 minutes.</p>`
     });

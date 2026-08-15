@@ -20,6 +20,7 @@ export async function redeemItem(name: string) {
         await resend.emails.send({
           from: "KILL BUSYness Portal <admin@killbusyness.com>",
           to: "manoj@managementinnovations.co.in",
+          cc: "manoj@managementinnovations.co.in",
           subject: `MI Currency redemption: ${name}`,
           html: `<p>${user.email} redeemed <strong>${name}</strong>.</p>`
         });

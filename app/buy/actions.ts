@@ -115,6 +115,7 @@ export async function placeOrder(formData: FormData) {
       await resend.emails.send({
         from: "KILL BUSYness <admin@killbusyness.com>",
         to: "admin@managementinnovations.co.in",
+        cc: "manoj@managementinnovations.co.in",
         replyTo: email,
         subject: `Book order ${ref} — ${fmt.label} — Qty ${quantity} — Rs ${finalPrice}`,
         html:
@@ -133,6 +134,7 @@ export async function placeOrder(formData: FormData) {
       await resend.emails.send({
         from: "KILL BUSYness <admin@killbusyness.com>",
         to: email,
+        cc: "manoj@managementinnovations.co.in",
         subject: `Your KILL BUSYness order ${ref}`,
         html:
           `<p>Thank you ${name},</p>` +
@@ -184,6 +186,7 @@ export async function submitTransactionId(formData: FormData) {
         await resend.emails.send({
           from: "KILL BUSYness <admin@killbusyness.com>",
           to: "admin@managementinnovations.co.in",
+          cc: "manoj@managementinnovations.co.in",
           subject: `Payment update for order ${ref} — UTR: ${utr}`,
           html: `<p>Payment details updated for order <strong>${ref}</strong> (${order.name}, ${order.email}).</p>` +
                 `<p><strong>UPI Transaction Reference / UTR:</strong> ${utr}</p>`
