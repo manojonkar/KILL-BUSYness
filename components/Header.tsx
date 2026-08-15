@@ -45,13 +45,16 @@ export default async function Header({ active }: { active?: string }) {
               </Link>
             ))}
           </div>
-          <div className="hud">
+          <div className="hud" style={{ display: "flex", alignItems: "center", minWidth: "max-content" }}>
             {user && progress ? (
-              <>
-                <div className="chip xp">◆ {progress.wallet} MI Credits</div>
-                <div className="chip level">L{levelFor(progress.xp)} · {levelName(progress.xp)}</div>
-                <div className="chip wallet">Σ {progress.xp} Lifetime</div>
-              </>
+              <div style={{ textAlign: "right", lineHeight: 1.25 }}>
+                <div style={{ fontSize: "0.82rem", fontWeight: 700, color: "var(--teal-ink, #0f766e)", marginBottom: 2 }}>
+                  L{levelFor(progress.xp)} · {levelName(progress.xp)}
+                </div>
+                <div style={{ fontSize: "0.74rem", color: "var(--ink-soft)", fontWeight: 500 }}>
+                  ◆ {progress.wallet} MI Credits <span style={{ color: "#cbd5e1", margin: "0 4px" }}>•</span> Σ {progress.xp} Lifetime
+                </div>
+              </div>
             ) : (
               <>
                 <Link href="/login" className="btn btn-outline btn-sm">
