@@ -83,7 +83,14 @@ export default async function AdminDashboardPage({
       .filter((cr) => cr.user_id === u.id)
       .map((cr) => cr.chapter_id)
       .sort((a, b) => a - b);
-    const reflectionsCount = (reflectionRows || []).filter((ref) => ref.user_id === u.id).length;
+    const userReflections = (reflectionRows || [])
+      .filter((ref) => ref.user_id === u.id)
+      .map((ref) => ({
+        chapterId: ref.chapter_id,
+        body: ref.body,
+        updatedAt: ref.updated_at
+      }))
+      .sort((a, b) => a.chapterId - b.chapterId);
     const visits = (visitRows || []).filter((v) => v.user_id === u.id);
     const lastVisit = visits[0];
 
@@ -97,7 +104,8 @@ export default async function AdminDashboardPage({
       wallet: progress?.wallet || 0,
       streak: progress?.streak || 0,
       chaptersRead: reads,
-      reflectionsCount,
+      reflectionsCount: userReflections.length,
+      reflections: userReflections,
       lastVisitPath: lastVisit?.path || null,
       lastVisitTime: lastVisit?.created_at || null,
       totalVisits: visits.length
@@ -533,6 +541,34 @@ export default async function AdminDashboardPage({
                             }}>
                               {u.reflectionsCount} written
                             </span>
+                            {u.reflectionsCount > 0 && (
+                              <details style={{ marginTop: 6, fontSize: "0.78rem", textAlign: "left" }}>
+                                <summary style={{ cursor: "pointer", color: "var(--teal-ink, #0f766e)", fontWeight: 600 }}>
+                                  View text
+                                </summary>
+                                <div style={{ 
+                                  marginTop: 6, 
+                                  display: "flex", 
+                                  flexDirection: "column", 
+                                  gap: 6, 
+                                  minWidth: 200, 
+                                  maxWidth: 280, 
+                                  maxHeight: 180, 
+                                  overflowY: "auto", 
+                                  background: "#f8fafc", 
+                                  padding: 8, 
+                                  borderRadius: 6, 
+                                  border: "1px solid var(--line)" 
+                                }}>
+                                  {u.reflections.map((r, ri) => (
+                                    <div key={ri} style={{ borderBottom: ri < u.reflections.length - 1 ? "1px dashed var(--line)" : "none", paddingBottom: 6, marginBottom: 4 }}>
+                                      <strong style={{ color: "#1e293b" }}>Chapter {r.chapterId}:</strong>
+                                      <p style={{ margin: "2px 0 0", fontStyle: "italic", whiteSpace: "pre-wrap", color: "var(--ink-soft)" }}>&ldquo;{r.body}&rdquo;</p>
+                                    </div>
+                                  ))}
+                                </div>
+                              </details>
+                            )}
                           </td>
                           <td style={{ padding: 12 }}>
                             {u.lastVisitPath ? (
