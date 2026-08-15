@@ -9,7 +9,7 @@ import { scoreColor } from "@/lib/suggestions";
 
 export const dynamic = "force-dynamic";
 
-type Tab = "orders" | "companies" | "surveys" | "users" | "stories";
+type Tab = "orders" | "companies" | "surveys" | "users" | "stories" | "reports";
 
 export default async function AdminDashboardPage({
   searchParams
@@ -254,6 +254,20 @@ export default async function AdminDashboardPage({
             }}
           >
             ✍️ Stories Queue ({pendingStories.length})
+          </Link>
+          <Link
+            href="/admin?tab=reports"
+            style={{
+              padding: "10px 18px 8px",
+              textDecoration: "none",
+              fontWeight: 600,
+              fontSize: "0.92rem",
+              color: currentTab === "reports" ? "var(--teal-ink, #0f766e)" : "var(--ink-soft)",
+              borderBottom: currentTab === "reports" ? "3px solid var(--teal)" : "3px solid transparent",
+              transition: "all 0.15s ease"
+            }}
+          >
+            📈 Audit Reports
           </Link>
         </div>
 
@@ -711,6 +725,127 @@ export default async function AdminDashboardPage({
               )}
             </div>
           )}
+
+          {/* TAB: Audit Reports */}
+          {currentTab === "reports" && (() => {
+            const dimLabel: Record<string, string> = {
+              workload: "Workload Pressure", purpose: "Purpose", strategy: "Strategy",
+              competency: "Competency Chain", reflection: "Reflection & Learning",
+              ownership: "Ownership", leadership: "Leadership", standards: "Standards",
+              execution: "Execution & Build", sustain: "Sustaining Greatness"
+            };
+
+            const reportData = allCompanies.map(c => {
+              const cParts = allParticipants.filter(p => p.company_id === c.id);
+              const cCompleted = cParts.filter(p => p.status === "completed");
+              if (cCompleted.length === 0) return null;
+              const cPartIds = cParts.map(p => p.id);
+              const cResponses = (allResponseRows || []).filter(r => cPartIds.includes(r.participant_id));
+              if (cResponses.length === 0) return null;
+              const byP = new Map<string, { question_index: number; answer: number }[]>();
+              cResponses.forEach(r => {
+                const arr = byP.get(r.participant_id) || [];
+                arr.push({ question_index: r.question_index, answer: r.answer });
+                byP.set(r.participant_id, arr);
+              });
+              const pAnswers: ParticipantAnswers[] = cPartIds.map(id => ({
+                participantId: id,
+                answers: answersArrayFromRows(byP.get(id) || [])
+              }));
+              const dimScores = computeDimensionScores(pAnswers);
+              const overall = overallScore(dimScores);
+              const ranked = Object.entries(dimScores).sort((a, b) => a[1] - b[1]);
+              return { company: c, respondents: cCompleted.length, overall, dimScores, weakest3: ranked.slice(0, 3), strongest2: ranked.slice(-2).reverse() };
+            }).filter(Boolean) as { company: any; respondents: number; overall: number; dimScores: Record<string, number>; weakest3: [string, number][]; strongest2: [string, number][] }[];
+
+            return (
+              <div>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+                  <div>
+                    <h3 style={{ margin: 0 }}>Audit Reports — All Organizations</h3>
+                    <p style={{ margin: "4px 0 0", fontSize: "0.82rem", color: "var(--ink-soft)" }}>
+                      {reportData.length} of {allCompanies.length} companies have completed surveys · Higher score = Healthier (100 = best)
+                    </p>
+                  </div>
+                </div>
+                {reportData.length === 0 ? (
+                  <p style={{ color: "var(--ink-faint)", fontSize: "0.9rem" }}>No companies have completed surveys yet.</p>
+                ) : (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+                    {reportData.map(({ company: c, respondents, overall, dimScores, weakest3, strongest2 }) => {
+                      const circumference = 2 * Math.PI * 42;
+                      const gaugeColor = overall >= 70 ? "#0E9C74" : overall >= 40 ? "#D9A441" : "#FF5A3C";
+                      const bandStr = overall >= 70 ? "✅ Healthy" : overall >= 40 ? "⚠️ Moderate" : "🔴 At Risk";
+                      return (
+                        <div key={c.id} style={{ border: "1px solid var(--line)", borderRadius: 10, overflow: "hidden", background: "#fff" }}>
+                          {/* Header */}
+                          <div style={{ background: "linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%)", padding: "16px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
+                            <div>
+                              <div style={{ fontSize: "0.68rem", letterSpacing: "0.1em", color: "#94a3b8", textTransform: "uppercase", marginBottom: 2 }}>
+                                {c.industry || "Organization"} · {respondents} respondent{respondents !== 1 ? "s" : ""}
+                              </div>
+                              <div style={{ fontSize: "1.1rem", fontWeight: 700, color: "#fff" }}>{c.name}</div>
+                              <div style={{ fontSize: "0.78rem", color: "#94a3b8", marginTop: 2 }}>{c.admin_name} · {c.admin_email}</div>
+                            </div>
+                            <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+                              <div style={{ textAlign: "center" }}>
+                                <svg width="90" height="90" viewBox="0 0 100 100">
+                                  <circle cx="50" cy="50" r="42" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="10"/>
+                                  <circle cx="50" cy="50" r="42" fill="none" stroke={gaugeColor} strokeWidth="10"
+                                    strokeLinecap="round"
+                                    strokeDasharray={circumference.toFixed(2)}
+                                    strokeDashoffset={(circumference * (1 - overall / 100)).toFixed(2)}
+                                    transform="rotate(-90 50 50)"/>
+                                  <text x="50" y="56" textAnchor="middle" fontFamily="sans-serif" fontSize="22" fontWeight="700" fill="#fff">{overall}</text>
+                                </svg>
+                                <div style={{ fontSize: "0.72rem", color: gaugeColor, fontWeight: 700, marginTop: -4 }}>{bandStr}</div>
+                              </div>
+                              <Link href={`/report/${c.id}`} style={{ display: "inline-block", background: "rgba(255,255,255,0.1)", color: "#fff", textDecoration: "none", padding: "8px 14px", borderRadius: 6, fontSize: "0.8rem", fontWeight: 600, border: "1px solid rgba(255,255,255,0.2)", whiteSpace: "nowrap" }}>
+                                Open Full Report ↗
+                              </Link>
+                            </div>
+                          </div>
+                          {/* Body */}
+                          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 0 }}>
+                            <div style={{ padding: "18px 24px", borderRight: "1px solid var(--line)" }}>
+                              <div style={{ fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--ink-faint)", marginBottom: 12 }}>Scores by Dimension</div>
+                              {Object.entries(dimScores).map(([key, s]) => (
+                                <div key={key} style={{ marginBottom: 8 }}>
+                                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.78rem", marginBottom: 3 }}>
+                                    <span>{dimLabel[key] || key}</span>
+                                    <span style={{ fontWeight: 700, color: s >= 70 ? "#0E9C74" : s >= 40 ? "#D9A441" : "#FF5A3C" }}>{s}</span>
+                                  </div>
+                                  <div style={{ background: "#f0eee6", borderRadius: 4, height: 7 }}>
+                                    <div style={{ width: `${s}%`, height: 7, borderRadius: 4, background: s >= 70 ? "#0E9C74" : s >= 40 ? "#D9A441" : "#FF5A3C" }} />
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                            <div style={{ padding: "18px 24px" }}>
+                              <div style={{ fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--ink-faint)", marginBottom: 12 }}>Areas Needing Attention</div>
+                              {weakest3.map(([key, s]) => (
+                                <div key={key} style={{ background: "#fff5f5", borderLeft: "3px solid #FF5A3C", padding: "8px 10px", borderRadius: 4, marginBottom: 8, fontSize: "0.8rem" }}>
+                                  <strong>{dimLabel[key] || key}</strong>
+                                  <span style={{ color: "#FF5A3C", fontWeight: 700, marginLeft: 6 }}>{s}/100</span>
+                                </div>
+                              ))}
+                              <div style={{ fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--ink-faint)", margin: "16px 0 12px" }}>Organizational Strengths</div>
+                              {strongest2.map(([key, s]) => (
+                                <div key={key} style={{ background: "#f0fdf4", borderLeft: "3px solid #0E9C74", padding: "8px 10px", borderRadius: 4, marginBottom: 8, fontSize: "0.8rem" }}>
+                                  <strong>{dimLabel[key] || key}</strong>
+                                  <span style={{ color: "#0E9C74", fontWeight: 700, marginLeft: 6 }}>{s}/100</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            );
+          })()}
 
         </div>
       </main>
