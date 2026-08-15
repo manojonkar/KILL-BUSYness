@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import PageTracker from "@/components/PageTracker";
+import AntiCopy from "@/components/AntiCopy";
 
 export const metadata: Metadata = {
   title: "KILL BUSYness — Organization Audit Portal",
@@ -30,7 +31,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           `
         }} />
       </head>
-      <body onContextMenu={(e) => e.preventDefault()}>
+      <body>
+        <AntiCopy />
         <PageTracker />
         {children}
         <footer className="foot site-foot">
