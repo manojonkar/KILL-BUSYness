@@ -258,8 +258,8 @@ export const SPRINT_CONTENT: Record<string, { month1: string; month2: string; mo
   competency: {
     month1: "Audit the weakest link in your competency chain — is it hiring, training, promotion or delivery? Identify the specific breakage point and design one concrete intervention. Don't try to fix the whole chain at once.",
     month2: "Redesign one hiring or promotion decision process so that the criteria are explicit, written down and shared before the decision — not intuited after it. Run one real decision through the new process.",
-    month3: "Review the last three people who joined or were promoted. What worked in their onboarding or transition? What didn't? Use honest answers to improve the process for the next one.",
-    reread: "Chapter 4 — The Competency Chain"
+    month3: "Review the system. Where did the discipline slip? Which friction points were removed and which remain? Adjust the process and hold standard. This is now the new baseline.",
+    reread: "Chapter 11 — The Daily Check-in"
   },
   reflection: {
     month1: "Book a fixed 90-minute slot in every leadership calendar — non-negotiable — for a monthly strategic reflection. The only agenda item: 'What assumption are we operating on that might be wrong?' Nothing operational. No exceptions.",
@@ -296,5 +296,49 @@ export const SPRINT_CONTENT: Record<string, { month1: string; month2: string; mo
     month2: "Re-examine your reflection discipline: is it still as rigorous as it was when you were building? If success has caused it to drift, re-install it as a fixed, non-negotiable leadership practice — not an optional extra.",
     month3: "Ask your leadership team: 'If our best competitor was studying everything we do and planning to beat us, where would they start?' Use the answer to direct your next strategic investment — not toward your strengths, but toward your next necessary evolution.",
     reread: "Chapter 10 — Sustaining Greatness"
+  }
+};
+
+/** Actionable 4-step framework content for employee mini-reports */
+export const PARTICIPANT_TIPS: Record<string, { tip1: string; tip2: string }> = {
+  workload: {
+    tip1: "Identify your single highest-leverage task for tomorrow and block 90 minutes of uninterrupted time for it before checking email.",
+    tip2: "Audit your recurring meetings this week. Ask the organizer to make one of them asynchronous or excuse yourself if your active input isn't required."
+  },
+  purpose: {
+    tip1: "Before starting your next major task, explicitly write down how it connects to the broader team objective. If you can't, ask for clarification.",
+    tip2: "Start your next team meeting by acknowledging a colleague who made a decision that perfectly aligned with the organization's core values."
+  },
+  strategy: {
+    tip1: "When asked to take on a new project this week, pause and ask: 'How does this directly support our top strategic priority right now?'",
+    tip2: "Write down what you believe the team's top priority is, and ask your manager if it matches their view. Misalignment is the root of most friction."
+  },
+  competency: {
+    tip1: "Identify one specific skill that is slowing you down. Block 30 minutes this Friday to learn a better way to do it, or ask a peer to show you.",
+    tip2: "Document one recurring process you handle so clearly that someone else could cover for you tomorrow without asking questions."
+  },
+  reflection: {
+    tip1: "At the end of the day, spend 5 minutes writing down one thing that went well and one thing you could have done better. Close your laptop immediately after.",
+    tip2: "In your next 1-on-1, don't just report status. Ask your manager: 'What is one blind spot you think I have in how I'm approaching my work?'"
+  },
+  meetings: {
+    tip1: "For every meeting you organize this week, include a 1-sentence desired outcome in the invite. If it doesn't have an outcome, cancel it.",
+    tip2: "Practice the 'Law of Two Feet'—if you are in a meeting where you are neither adding nor receiving value, politely excuse yourself."
+  },
+  execution: {
+    tip1: "Reduce wasting time and energy in follow ups by finishing what you start before picking up the next task.",
+    tip2: "Help others and yourself by honouring your commitments and being proactive in action. Do what you said you would do, when you said you would do it."
+  },
+  ownership: {
+    tip1: "Stop bringing problems to your manager. This week, bring a problem accompanied by your best proposed solution.",
+    tip2: "When a mistake happens, be the first to say 'I own this' before pointing to the system or external factors."
+  },
+  courage: {
+    tip1: "Speak up in the next meeting when you see a consensus forming that you genuinely believe is flawed. Respectful friction prevents disaster.",
+    tip2: "Have that difficult conversation you've been putting off. Delaying it is draining more energy than actually doing it."
+  },
+  sustain: {
+    tip1: "Identify the process that is working best for you right now, and write it down so it becomes repeatable even when you are tired.",
+    tip2: "Protect your recovery time. Turn off Slack/email notifications on your phone after hours so you can return to work with full capacity."
   }
 };

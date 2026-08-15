@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { DIMENSIONS } from "@/lib/dimensions";
 import { computeDimensionScores, overallScore } from "@/lib/scoring";
 import { weakestDimensions } from "@/lib/suggestions";
-import { DIMENSION_INSIGHTS, scoreBand } from "@/lib/insights";
+import { PARTICIPANT_TIPS } from "@/lib/insights";
 
 export default async function SurveyPage({ params }: { params: { token: string } }) {
   const supabase = createClient();
@@ -30,9 +30,11 @@ export default async function SurveyPage({ params }: { params: { token: string }
     
     // 3. Get insights for their weakest dimension
     let tips = null;
+    let chapterText = "";
     if (weakest) {
-      const band = scoreBand(weakest.score);
-      tips = DIMENSION_INSIGHTS[weakest.key]?.[band];
+      tips = PARTICIPANT_TIPS[weakest.key];
+      const dimensionObj = DIMENSIONS.find(d => d.key === weakest.key);
+      chapterText = dimensionObj ? `Chapter ${dimensionObj.chapter} — ${dimensionObj.chapterTitle}` : "the relevant chapter";
     }
 
     return (
@@ -60,18 +62,16 @@ export default async function SurveyPage({ params }: { params: { token: string }
             <div className="card" style={{ padding: 32 }}>
               <h3 style={{ marginBottom: 16 }}>Your High-Leverage Opportunity</h3>
               <p style={{ fontSize: ".9rem", color: "var(--ink-soft)", marginBottom: 24, lineHeight: 1.6 }}>
-                Based on your answers, your biggest opportunity to protect your time and energy is in <strong>{weakest.label}</strong>. Here are 3 things you can do differently starting tomorrow:
+                Based on your answers, your biggest opportunity to protect your time and energy is in <strong>{weakest.label}</strong>. Here are 4 things you can do to improve this immediately:
               </p>
               
               <div style={{ background: "#f8fafc", padding: 24, borderRadius: 8, borderLeft: "4px solid #0E9C74" }}>
-                <h4 style={{ fontSize: "1rem", marginBottom: 12, color: "#0f172a" }}>Your one move</h4>
-                <p style={{ fontSize: ".95rem", color: "#334155", margin: 0, lineHeight: 1.6 }}>
-                  {tips.oneMove}
-                </p>
-                <div style={{ marginTop: 24 }}>
-                  <h4 style={{ fontSize: ".85rem", textTransform: "uppercase", letterSpacing: ".05em", color: "#64748b", marginBottom: 8 }}>Why this matters</h4>
-                  <p style={{ fontSize: ".85rem", color: "#475569", margin: 0 }}>{tips.whatItMeans}</p>
-                </div>
+                <ol style={{ paddingLeft: 20, margin: 0, fontSize: "1rem", color: "#334155", lineHeight: 1.7 }}>
+                  <li style={{ marginBottom: 12 }}>{tips.tip1}</li>
+                  <li style={{ marginBottom: 12 }}>{tips.tip2}</li>
+                  <li style={{ marginBottom: 12 }}>Study <strong>{chapterText}</strong> to give you more insights.</li>
+                  <li>Discuss this topic with your colleagues and share here what you got from that discussion.</li>
+                </ol>
               </div>
             </div>
           )}
