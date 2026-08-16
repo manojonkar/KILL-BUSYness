@@ -62,7 +62,7 @@ export default async function RewardsPage() {
                   <div className={`badge-tile ${unlocked ? "unlocked" : ""}`} key={b.id} style={b.id === "b10" ? { gridColumn: "1 / -1", border: unlocked ? "1px solid #0E9C74" : undefined } : undefined}>
                     {b.id === "b10" ? (
                       <div style={{ marginBottom: 16 }}>
-                        <img src="/img/emblem.jpg" alt="Lion Emblem" style={{ width: 140, height: 140, objectFit: "contain", margin: "0 auto", filter: unlocked ? "drop-shadow(0 4px 12px rgba(0,0,0,0.15))" : "grayscale(100%) opacity(40%)" }} />
+                        <img src="/img/emblem.jpg" alt="Lion Emblem" style={{ width: 140, height: 140, objectFit: "contain", margin: "0 auto", borderRadius: "50%", filter: unlocked ? "drop-shadow(0 4px 12px rgba(0,0,0,0.15))" : "grayscale(100%) opacity(40%)" }} />
                       </div>
                     ) : (
                       <div className="ic">{b.ic}</div>
