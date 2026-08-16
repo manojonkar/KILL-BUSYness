@@ -1,6 +1,18 @@
+import fs from 'fs';
+import path from 'path';
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 export async function getChapterSummary(supabase: SupabaseClient, chapterId: number): Promise<string> {
+  try {
+    const filePath = path.join(process.cwd(), 'content', 'chapters', `${chapterId}.md`);
+    if (fs.existsSync(filePath)) {
+      return fs.readFileSync(filePath, 'utf8');
+    }
+  } catch (err) {
+    console.error("Error reading chapter markdown:", err);
+  }
+  
+  // Fallback to database if local file is missing
   const { data } = await supabase
     .from("chapter_texts")
     .select("summary")
@@ -10,10 +22,9 @@ export async function getChapterSummary(supabase: SupabaseClient, chapterId: num
 }
 
 export async function getAllChapterSummaries(supabase: SupabaseClient): Promise<Record<number, string>> {
-  const { data } = await supabase.from("chapter_texts").select("chapter_id, summary");
   const map: Record<number, string> = {};
-  (data || []).forEach((r: { chapter_id: number; summary: string }) => {
-    map[r.chapter_id] = r.summary;
-  });
+  for (let i = 0; i <= 10; i++) {
+    map[i] = await getChapterSummary(supabase, i);
+  }
   return map;
 }

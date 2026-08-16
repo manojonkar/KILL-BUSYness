@@ -37,55 +37,56 @@ export default async function RewardsPage() {
           <p>Earn MI Credits by reading, reflecting, running your organization&apos;s audit and championing the work. Redeem them for real Management Innovations services.</p>
         </div>
 
-        <div className="card" style={{ padding: 26, marginBottom: 20 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", fontSize: ".85rem", fontWeight: 700, marginBottom: 8, flexWrap: "wrap", gap: 8 }}>
-            <span>Level {lvl} · {name}</span>
-            <span>
-              {next ? `${progress.xp} / ${next.min} to ${next.name}` : `${progress.xp} lifetime credits — top level`}
-            </span>
+        <div className="gamification-container" style={{ marginBottom: 24 }}>
+          <div className="level-map">
+            <div className="level-header">
+              <span className="level-title">Level {lvl} · {name}</span>
+              <span style={{ fontSize: "0.9rem", color: "#64748b", fontWeight: 600 }}>
+                {next ? `${progress.xp} / ${next.min} XP` : `${progress.xp} lifetime credits — top level`}
+              </span>
+            </div>
+            <div className="level-progress-container">
+              <div className="level-progress-bar" style={{ width: `${Math.min(pct, 100)}%` }} />
+            </div>
+            <p style={{ fontSize: ".85rem", color: "#64748b", marginTop: 16 }}>
+              Keep earning credits to unlock the next level and new rewards. Your lifetime balance sets your level.
+            </p>
           </div>
-          <div className="progress-track">
-            <div className="progress-fill" style={{ width: `${Math.min(pct, 100)}%` }} />
-          </div>
-          <p style={{ fontSize: ".76rem", color: "var(--ink-faint)", marginTop: 10 }}>
-            Lifetime credits never fall — they set your level. Your balance below is what you can spend.
-          </p>
         </div>
 
-        <div className="grid cols-2">
-          <div className="card" style={{ padding: 24 }}>
-            <h4 style={{ marginBottom: 14 }}>Badges</h4>
-            <div className="badge-grid">
+        <div className="gamification-container" style={{ gridTemplateColumns: "1fr", marginBottom: 24 }}>
+          <div className="card" style={{ padding: 32, background: "#fafaf8", border: "none" }}>
+            <h4 style={{ marginBottom: 24, fontSize: "1.2rem", fontWeight: 800 }}>Trophy Case</h4>
+            <div className="trophy-case">
               {BADGES.map((b) => {
                 const unlocked = badges.has(b.id);
+                const isMaster = b.id === "b10";
                 return (
-                  <div className={`badge-tile ${unlocked ? "unlocked" : ""}`} key={b.id} style={b.id === "b10" ? { gridColumn: "1 / -1", border: unlocked ? "1px solid #0E9C74" : undefined } : undefined}>
-                    {b.id === "b10" ? (
-                      <div style={{ marginBottom: 8 }}>
-                        <img src="/img/emblem.jpg" alt="Lion Emblem" style={{ width: 180, height: 180, objectFit: "contain", margin: "0 auto", borderRadius: "50%", filter: unlocked ? "drop-shadow(0 4px 12px rgba(0,0,0,0.15))" : "grayscale(100%) opacity(40%)" }} />
+                  <div className={`trophy-item ${unlocked ? "unlocked" : "locked"} ${isMaster ? "master-badge" : ""}`} key={b.id}>
+                    {isMaster ? (
+                      <div style={{ marginBottom: 12 }}>
+                        <img src="/img/emblem.jpg" alt="Lion Emblem" style={{ width: 140, height: 140, objectFit: "contain", margin: "0 auto", borderRadius: "50%", filter: unlocked ? "drop-shadow(0 4px 12px rgba(217,164,65,0.25))" : "grayscale(100%) opacity(40%)" }} />
                       </div>
                     ) : (
-                      <div className="ic">{b.ic}</div>
+                      <div className="trophy-icon">{b.ic}</div>
                     )}
-                    {b.id === "b10" ? (
-                      <h5 style={{ color: "#D9A441", fontWeight: 900, fontSize: "1.05rem", textTransform: "uppercase", letterSpacing: "0.02em" }}>{b.name}</h5>
-                    ) : (
-                      <h5>{b.name}</h5>
-                    )}
-                    {b.desc && <p>{b.desc}</p>}
-                    {b.id === "b10" && unlocked && (
+                    
+                    <h5 className="trophy-name">{b.name}</h5>
+                    {b.desc && <p className="trophy-desc">{b.desc}</p>}
+                    
+                    {isMaster && unlocked && (
                       <a 
                         href={`https://www.linkedin.com/profile/add?startTask=CERTIFICATION_NAME&name=${encodeURIComponent("I KILL BUSYness")}&organizationName=${encodeURIComponent("Management Innovations")}&certUrl=${encodeURIComponent("https://www.killbusyness.com")}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="btn btn-outline btn-sm"
-                        style={{ display: "inline-flex", alignItems: "center", gap: 6, color: "#0077b5", borderColor: "#0077b5", marginTop: 12, fontSize: ".75rem" }}
+                        style={{ display: "inline-flex", alignItems: "center", gap: 8, color: "#0077b5", borderColor: "#0077b5", marginTop: 16, fontSize: ".85rem", background: "#fff", padding: "8px 16px", borderRadius: "20px" }}
                         title="Add Certification to LinkedIn Profile"
                       >
-                        <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
                           <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
                         </svg>
-                        Add to LinkedIn
+                        Add to Profile
                       </a>
                     )}
                   </div>
@@ -93,14 +94,16 @@ export default async function RewardsPage() {
               })}
             </div>
           </div>
-          <div className="card" style={{ padding: 24 }}>
+        </div>
+        <div className="grid cols-2">
+          <div className="card" style={{ padding: 32 }}>
             <h4 style={{ marginBottom: 14 }}>Your organization</h4>
             {org ? (
               <>
-                <div className="leader-row"><span>Participants invited</span><span>{org.invited}</span></div>
-                <div className="leader-row"><span>Surveys completed</span><span>{org.completed}</span></div>
-                <div className="leader-row"><span>Response rate</span><span>{org.rate}%</span></div>
-                <p style={{ fontSize: ".76rem", color: "var(--ink-faint)", marginTop: 12 }}>
+                <div className="leader-row" style={{ padding: "8px 0", borderBottom: "1px solid #f1f5f9" }}><span style={{ color: "#64748b" }}>Participants invited</span><span style={{ fontWeight: 600 }}>{org.invited}</span></div>
+                <div className="leader-row" style={{ padding: "8px 0", borderBottom: "1px solid #f1f5f9" }}><span style={{ color: "#64748b" }}>Surveys completed</span><span style={{ fontWeight: 600 }}>{org.completed}</span></div>
+                <div className="leader-row" style={{ padding: "8px 0", borderBottom: "1px solid #f1f5f9" }}><span style={{ color: "#64748b" }}>Response rate</span><span style={{ fontWeight: 600 }}>{org.rate}%</span></div>
+                <p style={{ fontSize: ".85rem", color: "#94a3b8", marginTop: 16 }}>
                   {org.completed === 0
                     ? "Your audit unlocks once at least one participant completes the survey."
                     : "A higher response rate makes every score in your report more reliable."}
@@ -112,36 +115,41 @@ export default async function RewardsPage() {
               </p>
             )}
           </div>
-        </div>
-
-        <div className="card" style={{ padding: 24, marginTop: 16 }}>
-          <h4 style={{ marginBottom: 4 }}>MI Credits</h4>
-          <p style={{ color: "var(--ink-soft)", fontSize: ".85rem", marginBottom: 16 }}>
-            Balance: <strong style={{ color: "var(--gold)", fontFamily: "var(--mono)" }}>{progress.wallet} MI Credits</strong>
-          </p>
-          {!hasAudit ? (
-            <p style={{ fontSize: ".78rem", color: "var(--ink-faint)", marginBottom: 14 }}>
-              Items marked &ldquo;audit required&rdquo; unlock once your organization has completed its audit.
-            </p>
-          ) : null}
-          {store.map((s) => {
-            const locked = s.requiresAudit && !hasAudit;
-            return (
-              <div className="card store-item" style={{ marginBottom: 10, opacity: locked ? 0.55 : 1 }} key={s.name}>
-                <span>
-                  {s.name}
-                  {s.requiresAudit ? (
-                    <span style={{ fontSize: ".68rem", fontFamily: "var(--mono)", color: "var(--ink-faint)", display: "block", marginTop: 3 }}>
-                      Audit required
-                    </span>
-                  ) : null}
-                </span>
-                <span className="price">
-                  ◆ {s.cost} <RedeemButton name={s.name} cost={s.cost} canAfford={!locked && progress.wallet >= s.cost} />
-                </span>
-              </div>
-            );
-          })}
+          
+          <div className="card" style={{ padding: 32 }}>
+            <h4 style={{ marginBottom: 8 }}>VIP Store</h4>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 24 }}>
+              <p style={{ color: "#64748b", fontSize: ".9rem", margin: 0 }}>Available balance:</p>
+              <strong style={{ color: "#D9A441", fontSize: "1.2rem", fontFamily: "var(--mono)" }}>{progress.wallet} Credits</strong>
+            </div>
+            
+            <div className="vip-store">
+              {store.map((s) => {
+                const locked = s.requiresAudit && !hasAudit;
+                return (
+                  <div className={`store-card ${locked ? "locked" : ""}`} key={s.name}>
+                    <div className="store-info">
+                      <h5>{s.name}</h5>
+                      {s.requiresAudit && (
+                        <span style={{ fontSize: ".75rem", color: "#94a3b8" }}>
+                          <span style={{ color: "#ef4444", marginRight: 4 }}>●</span>
+                          Audit required
+                        </span>
+                      )}
+                    </div>
+                    <div className="store-price">
+                      ◆ {s.cost} <RedeemButton name={s.name} cost={s.cost} canAfford={!locked && progress.wallet >= s.cost} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            {!hasAudit && (
+              <p style={{ fontSize: ".75rem", color: "#94a3b8", marginTop: 16, textAlign: "center" }}>
+                Unlock exclusive items by completing your organization audit.
+              </p>
+            )}
+          </div>
         </div>
       </main>
     </>

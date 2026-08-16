@@ -12,6 +12,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <head>
         <link rel="stylesheet" href="/css" />
+        <link rel="stylesheet" href="/css/gamification.css" />
         <style dangerouslySetInnerHTML={{
           __html: `
             html, body {

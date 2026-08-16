@@ -8,6 +8,30 @@ import { createClient } from "@/lib/supabase/server";
 import { getProgress, getChapterReads, getBadges, touchStreak, evaluateBadges, levelFor, levelName } from "@/lib/gamification";
 import { CHAPTERS } from "@/lib/chapters";
 
+function CircularProgress({ percent, label, value }: { percent: number; label: string; value: string|number }) {
+  const radius = 36;
+  const circumference = 2 * Math.PI * radius;
+  const strokeDashoffset = circumference - (percent / 100) * circumference;
+  
+  return (
+    <div style={{ position: "relative", width: 80, height: 80, display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <svg width="80" height="80" style={{ transform: "rotate(-90deg)", position: "absolute", top: 0, left: 0 }}>
+        <circle cx="40" cy="40" r={radius} stroke="#e2e8f0" strokeWidth="6" fill="none" />
+        <circle cx="40" cy="40" r={radius} stroke="url(#progressGradient)" strokeWidth="6" fill="none" strokeDasharray={circumference} strokeDashoffset={strokeDashoffset} style={{ transition: "stroke-dashoffset 1s ease-in-out" }} strokeLinecap="round" />
+        <defs>
+          <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="#0E9C74" />
+            <stop offset="100%" stopColor="#22c55e" />
+          </linearGradient>
+        </defs>
+      </svg>
+      <div style={{ textAlign: "center", zIndex: 1 }}>
+        <div style={{ fontSize: "1.1rem", fontWeight: 800, color: "#0f172a", lineHeight: 1 }}>{value}</div>
+      </div>
+    </div>
+  );
+}
+
 export default async function DashboardPage({ searchParams }: { searchParams: { error?: string } }) {
   const supabase = createClient();
   const {
@@ -48,24 +72,33 @@ export default async function DashboardPage({ searchParams }: { searchParams: { 
         <div className="hero-panel">
           <h1>Welcome back{user.user_metadata?.name ? `, ${user.user_metadata.name}` : ""}.</h1>
           <p>Your reading journey, XP, and Organization Audit — all in one place.</p>
-          <div className="stat-row">
-            <div>
-              <strong>
-                {readIds.size}/{CHAPTERS.length}
-              </strong>
-              <span>chapters read</span>
+          <div className="stat-row" style={{ display: "flex", gap: 32, flexWrap: "wrap", marginTop: 32 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+              <CircularProgress percent={Math.round((readIds.size / CHAPTERS.length) * 100)} value={`${readIds.size}/${CHAPTERS.length}`} label="" />
+              <div>
+                <strong style={{ display: "block", fontSize: "1.1rem" }}>Reading Journey</strong>
+                <span style={{ color: "#64748b", fontSize: ".85rem" }}>Chapters read</span>
+              </div>
             </div>
-            <div>
-              <strong>{progress.xp}</strong>
-              <span>MI Credits earned</span>
+            
+            <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+              <div style={{ width: 80, height: 80, borderRadius: "50%", background: "linear-gradient(135deg, #f8fafc, #f1f5f9)", border: "1px solid #e2e8f0", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <span style={{ fontSize: "1.2rem", fontWeight: 800, color: "#D9A441" }}>{progress.xp}</span>
+              </div>
+              <div>
+                <strong style={{ display: "block", fontSize: "1.1rem" }}>Lifetime XP</strong>
+                <span style={{ color: "#64748b", fontSize: ".85rem" }}>MI Credits earned</span>
+              </div>
             </div>
-            <div>
-              <strong>{badges.size}/8</strong>
-              <span>badges</span>
-            </div>
-            <div>
-              <strong>{progress.streak}</strong>
-              <span>day streak</span>
+
+            <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+              <div style={{ width: 80, height: 80, borderRadius: "50%", background: "linear-gradient(135deg, #f8fafc, #f1f5f9)", border: "1px solid #e2e8f0", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <span style={{ fontSize: "1.2rem", fontWeight: 800, color: "#0f172a" }}>{badges.size}</span>
+              </div>
+              <div>
+                <strong style={{ display: "block", fontSize: "1.1rem" }}>Trophies</strong>
+                <span style={{ color: "#64748b", fontSize: ".85rem" }}>Badges unlocked</span>
+              </div>
             </div>
           </div>
         </div>
