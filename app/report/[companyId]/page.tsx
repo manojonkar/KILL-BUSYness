@@ -518,33 +518,27 @@ export default async function ReportPage({ params }: { params: { companyId: stri
 
         {/* ── SECTION 5.5: Founder Actions ────────────────────── */}
         <div className="card" style={{ padding: 26, marginBottom: 20, background: "linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)", border: "1px solid #cbd5e1" }}>
-          <h4 style={{ marginBottom: 4, color: "#0f172a" }}>Your 2 Most Important Actions</h4>
-          <p style={{ fontSize: ".82rem", color: "#475569", marginBottom: 20 }}>
-            Based on your score of {overall}, here is exactly what you should do offline this week to create the most leverage for your organization.
+          <h4 style={{ marginBottom: 4, color: "#0f172a" }}>Your Next Steps</h4>
+          <p style={{ fontSize: ".88rem", color: "#475569", marginBottom: 20, fontWeight: 500 }}>
+            Please see the most suitable options for your organization:
           </p>
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            <div style={{ background: "#fff", padding: "16px 20px", borderRadius: 8, borderLeft: "4px solid #0E9C74", boxShadow: "0 1px 3px rgba(0,0,0,0.05)" }}>
-              <div style={{ fontSize: ".75rem", textTransform: "uppercase", letterSpacing: ".05em", color: "#0E9C74", fontWeight: 700, marginBottom: 4 }}>Action 1</div>
-              <strong style={{ fontSize: ".95rem", color: "#0f172a" }}>
-                {overall < 50 ? "Organize a KILL BUSYness Workshop" : "Study the book with your leadership team"}
-              </strong>
-              <p style={{ fontSize: ".85rem", color: "#475569", margin: "4px 0 0" }}>
-                {overall < 50 
-                  ? "Your organization is currently operating with massive friction. You need a dedicated, facilitated intervention to reset the operational baseline." 
-                  : "You have a solid foundation, but the team needs a shared language. Have every leader read the book and discuss one chapter per week."}
-              </p>
-            </div>
-            <div style={{ background: "#fff", padding: "16px 20px", borderRadius: 8, borderLeft: "4px solid #D9A441", boxShadow: "0 1px 3px rgba(0,0,0,0.05)" }}>
-              <div style={{ fontSize: ".75rem", textTransform: "uppercase", letterSpacing: ".05em", color: "#D9A441", fontWeight: 700, marginBottom: 4 }}>Action 2</div>
-              <strong style={{ fontSize: ".95rem", color: "#0f172a" }}>
-                {overall < 50 ? "Align your executive team on the ROAR framework" : "Create a 30-day upgrade plan and re-audit"}
-              </strong>
-              <p style={{ fontSize: ".85rem", color: "#475569", margin: "4px 0 0" }}>
-                {overall < 50 
-                  ? "Before pushing changes down, ensure your top leaders completely agree on the Reflect, Own, Assert, and Run phases for your core workflows." 
-                  : "Draft a specific 30-day intervention based on your weakest dimension. At the end of the month, re-run this audit to prove the needle moved."}
-              </p>
-            </div>
+            {[
+              "Have the leadership team complete studying the book",
+              "Organize a Leader Briefing Session with a KILL BUSYness expert to help the leadership team get better insights and sort out their doubts",
+              "Refer Chapter 9 for creating a detailed implementation plan",
+              "Organize a 2 day KILL BUSYness workshop",
+              "Do deeper work on Organization Development by going for OD Consulting or attending the ODeX Workshop (OD for Extraordinary Organizations)"
+            ].map((option, idx) => (
+              <div key={idx} style={{ background: "#fff", padding: "16px 20px", borderRadius: 8, borderLeft: "4px solid #0E9C74", boxShadow: "0 1px 3px rgba(0,0,0,0.05)", display: "flex", gap: "16px", alignItems: "center" }}>
+                <div style={{ background: "#f0fdf4", color: "#0E9C74", width: "32px", height: "32px", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: "bold", flexShrink: 0 }}>
+                  {idx + 1}
+                </div>
+                <p style={{ margin: 0, fontSize: ".9rem", color: "#334155", lineHeight: 1.5 }}>
+                  {option}
+                </p>
+              </div>
+            ))}
           </div>
         </div>
 
