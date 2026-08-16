@@ -102,6 +102,20 @@ export async function getReflection(supabase: SupabaseClient, userId: string, ch
   return data?.body || "";
 }
 
+export async function isChapterUnlocked(supabase: SupabaseClient, userId: string, chapterId: number) {
+  const { data } = await supabase
+    .from("user_unlocked_chapters")
+    .select("unlocked_at")
+    .eq("user_id", userId)
+    .eq("chapter_id", chapterId)
+    .maybeSingle();
+  return !!data;
+}
+
+export async function unlockChapter(supabase: SupabaseClient, chapterId: number) {
+  await supabase.rpc("unlock_chapter", { p_chapter_id: chapterId });
+}
+
 export async function saveReflection(supabase: SupabaseClient, chapterId: number, body: string) {
   await supabase.rpc("save_reflection", { p_chapter_id: chapterId, p_body: body });
 }

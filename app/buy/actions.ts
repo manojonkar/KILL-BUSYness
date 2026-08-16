@@ -29,6 +29,9 @@ export async function placeOrder(formData: FormData) {
   if (fmt.physical && (!address || !city || !pincode)) fail("Please give a full delivery address including city and PIN code.");
 
   const quantity = Math.max(1, parseInt(qtyStr, 10) || 1);
+  const appliedCreditsStr = g("appliedCredits");
+  const appliedCredits = Math.max(0, parseInt(appliedCreditsStr, 10) || 0);
+
   const basePrice = fmt.price;
   const subtotal = basePrice * quantity;
   
@@ -40,15 +43,33 @@ export async function placeOrder(formData: FormData) {
   }
 
   const discountAmount = Math.round((subtotal * discountPercent) / 100);
-  const finalPrice = subtotal - discountAmount;
+  const priceAfterBulk = subtotal - discountAmount;
+  const maxCreditsAllowedToApply = priceAfterBulk * 2;
+  const validCreditsToUse = Math.min(appliedCredits, maxCreditsAllowedToApply);
+  const creditDiscountINR = Math.floor(validCreditsToUse / 2);
+  
+  const finalPrice = Math.max(0, priceAfterBulk - creditDiscountINR);
+
+  const supabase = createClient();
+
+  if (validCreditsToUse > 0) {
+    const { data: success } = await supabase.rpc("apply_credits_to_order", { p_amount: validCreditsToUse });
+    if (!success) {
+      fail("Failed to apply MI Credits. Please check your balance.");
+      return;
+    }
+  }
 
   const orderNotes = `Quantity: ${quantity}${
     discountPercent > 0 
       ? `, Applied ${discountPercent}% bulk discount (saved Rs ${discountAmount})` 
       : ""
+  }${
+    validCreditsToUse > 0
+      ? `, Applied ${validCreditsToUse} MI Credits (saved Rs ${creditDiscountINR})`
+      : ""
   }`;
 
-  const supabase = createClient();
   const ref = "KB-" + crypto.randomUUID().replace(/-/g, "").slice(0, 6).toUpperCase();
   const { error } = await supabase
     .from("book_orders")
@@ -103,6 +124,11 @@ export async function placeOrder(formData: FormData) {
         <tr style="color: #0f766e;">
           <td style="padding: 8px 0;">Bulk Discount (${discountPercent}%)</td>
           <td style="text-align: right; padding: 8px 0;">-Rs ${discountAmount.toLocaleString("en-IN")}</td>
+        </tr>` : ""}
+        ${validCreditsToUse > 0 ? `
+        <tr style="color: #D9A441;">
+          <td style="padding: 8px 0;">MI Credits Applied (${validCreditsToUse})</td>
+          <td style="text-align: right; padding: 8px 0;">-Rs ${creditDiscountINR.toLocaleString("en-IN")}</td>
         </tr>` : ""}
         <tr style="border-top: 2px solid #94a3b8; font-weight: bold; font-size: 1.1rem; color: #0f172a;">
           <td style="padding: 8px 0;">Total Amount</td>

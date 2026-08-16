@@ -1,6 +1,10 @@
 import type { Metadata } from "next";
+import { Inter, Merriweather } from "next/font/google";
 import PageTracker from "@/components/PageTracker";
 import AntiCopy from "@/components/AntiCopy";
+
+const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
+const merriweather = Merriweather({ weight: ["300", "400", "700"], subsets: ["latin"], variable: "--font-merriweather" });
 
 export const metadata: Metadata = {
   title: "KILL BUSYness — Organization Audit Portal",
@@ -32,7 +36,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           `
         }} />
       </head>
-      <body>
+      <body className={`${inter.variable} ${merriweather.variable}`}>
         <AntiCopy />
         <PageTracker />
         {children}

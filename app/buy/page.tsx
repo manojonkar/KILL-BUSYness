@@ -2,6 +2,7 @@ import Link from "next/link";
 import Header from "@/components/Header";
 import { createClient } from "@/lib/supabase/server";
 import { FORMATS, getSettings } from "@/lib/book";
+import { getProgress } from "@/lib/gamification";
 import { placeOrder, submitTransactionId } from "./actions";
 import OrderForm from "./OrderForm";
 
@@ -20,6 +21,13 @@ export default async function BuyPage({
   const payee = settings.upi_payee || "Management Innovations";
   const amazon = settings.amazon_url || "";
   const upiReady = upi && !upi.startsWith("REPLACE_");
+
+  const { data: { user } } = await supabase.auth.getUser();
+  let wallet = 0;
+  if (user) {
+    const progress = await getProgress(supabase, user.id);
+    wallet = progress.wallet;
+  }
 
   let orderAmount = fmt.price;
   if (searchParams?.ref) {
@@ -204,7 +212,7 @@ export default async function BuyPage({
           <p style={{ color: "var(--ink-soft)", fontSize: ".85rem", marginBottom: 20 }}>
             ₹{fmt.price.toLocaleString("en-IN")} · {fmt.blurb}
           </p>
-          <OrderForm fmt={fmt} placeOrder={placeOrder} />
+          <OrderForm fmt={fmt} placeOrder={placeOrder} wallet={wallet} />
         </div>
 
         {amazon ? (

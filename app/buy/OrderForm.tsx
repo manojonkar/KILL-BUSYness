@@ -6,10 +6,12 @@ import type { BookFormat } from "@/lib/book";
 interface OrderFormProps {
   fmt: BookFormat;
   placeOrder: (formData: FormData) => Promise<void>;
+  wallet?: number;
 }
 
-export default function OrderForm({ fmt, placeOrder }: OrderFormProps) {
+export default function OrderForm({ fmt, placeOrder, wallet = 0 }: OrderFormProps) {
   const [quantity, setQuantity] = useState<number>(1);
+  const [creditsToUse, setCreditsToUse] = useState<number>(0);
 
   const price = fmt.price;
   const subtotal = price * quantity;
@@ -22,11 +24,22 @@ export default function OrderForm({ fmt, placeOrder }: OrderFormProps) {
   }
 
   const discountAmount = Math.round((subtotal * discountPercent) / 100);
-  const finalPrice = subtotal - discountAmount;
+  const priceAfterBulk = subtotal - discountAmount;
+  
+  // Calculate max credits they can use (2 credits = 1 INR)
+  const maxCreditsValue = Math.floor(wallet / 2);
+  const maxCreditsAllowedToApply = Math.min(wallet, priceAfterBulk * 2);
+  
+  // Ensure the slider value doesn't exceed the new max if quantity drops
+  const validCreditsToUse = Math.min(creditsToUse, maxCreditsAllowedToApply);
+  const creditDiscountINR = Math.floor(validCreditsToUse / 2);
+  
+  const finalPrice = Math.max(0, priceAfterBulk - creditDiscountINR);
 
   return (
     <form action={placeOrder} className="form-grid">
       <input type="hidden" name="format" value={fmt.key} />
+      <input type="hidden" name="appliedCredits" value={validCreditsToUse} />
       
       <div className="field">
         <label htmlFor="name">Your Name</label>
@@ -103,13 +116,40 @@ export default function OrderForm({ fmt, placeOrder }: OrderFormProps) {
           </div>
           {discountPercent > 0 && (
             <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.92rem", color: "#0f766e", fontWeight: 600 }}>
-              <span>Bulk Discount ({discountPercent}% off for &gt; {discountPercent === 10 ? "10" : "100"} books)</span>
+              <span>Bulk Discount ({discountPercent}% off)</span>
               <span>-₹{discountAmount.toLocaleString("en-IN")}</span>
+            </div>
+          )}
+          {validCreditsToUse > 0 && (
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.92rem", color: "#D9A441", fontWeight: 600 }}>
+              <span>MI Credits Applied ({validCreditsToUse} Credits)</span>
+              <span>-₹{creditDiscountINR.toLocaleString("en-IN")}</span>
             </div>
           )}
           <div style={{ display: "flex", justifyContent: "space-between", fontSize: "1.05rem", fontWeight: 700, paddingTop: "8px", borderTop: "1px solid #cbd5e1", color: "#0f172a" }}>
             <span>Total Amount</span>
             <span>₹{finalPrice.toLocaleString("en-IN")}</span>
+          </div>
+        </div>
+      )}
+
+      {wallet > 0 && (
+        <div className="field full" style={{ marginTop: 12, padding: "16px 20px", background: "#fffbeb", borderRadius: 8, border: "1px solid #fde68a" }}>
+          <label style={{ display: "flex", justifyContent: "space-between", marginBottom: 12 }}>
+            <span style={{ color: "#92400e", fontWeight: 600 }}>Use MI Credits for a discount</span>
+            <span style={{ color: "#b45309", fontSize: "0.9rem" }}>Available: {wallet} (₹{maxCreditsValue})</span>
+          </label>
+          <input
+            type="range"
+            min="0"
+            max={maxCreditsAllowedToApply}
+            step="2"
+            value={validCreditsToUse}
+            onChange={(e) => setCreditsToUse(parseInt(e.target.value, 10))}
+            style={{ width: "100%", accentColor: "#d97706" }}
+          />
+          <div style={{ textAlign: "center", marginTop: 8, fontSize: "0.9rem", color: "#92400e" }}>
+            Applying <strong>{validCreditsToUse} Credits</strong> to save <strong>₹{creditDiscountINR}</strong>
           </div>
         </div>
       )}
