@@ -75,7 +75,7 @@ export default async function RewardsPage() {
                     <p>{b.desc}</p>
                     {b.id === "b10" && unlocked && (
                       <a 
-                        href={`https://www.linkedin.com/profile/add?startTask=CERTIFICATION_NAME&name=${encodeURIComponent("I am in the KILL BUSYness movement.")}&organizationName=${encodeURIComponent("Management Innovations")}&certUrl=${encodeURIComponent("https://www.killbusyness.com")}`}
+                        href={`https://www.linkedin.com/profile/add?startTask=CERTIFICATION_NAME&name=${encodeURIComponent("I KILL BUSYness")}&organizationName=${encodeURIComponent("Management Innovations")}&certUrl=${encodeURIComponent("https://www.killbusyness.com")}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="btn btn-outline btn-sm"

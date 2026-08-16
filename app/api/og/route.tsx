@@ -52,9 +52,7 @@ export async function GET(req: NextRequest) {
                 maxWidth: 900,
               }}
             >
-              I am in the
-              <br />
-              KILL BUSYness movement.
+              I KILL BUSYness
             </h1>
             <p
               style={{

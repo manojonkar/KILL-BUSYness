@@ -25,7 +25,7 @@ export const BADGES: Badge[] = [
   { id: "b6", ic: "👥", name: "Team Builder", desc: "Invite 10 or more participants" },
   { id: "b7", ic: "🚀", name: "Transformer", desc: "Improve your BUSYness Index by 15+ on a re-run" },
   { id: "b9", ic: "📣", name: "Ambassador", desc: "3 referrals sign up and start reading" },
-  { id: "b10", ic: "⚡", name: "I am in the KILL BUSYness movement.", desc: "Master Certification: Complete the book and the Organization Audit" }
+  { id: "b10", ic: "⚡", name: "I KILL BUSYness", desc: "Complete the book and the Organization Audit" }
 ];
 
 export interface StoreItem { name: string; cost: number; requiresAudit: boolean; }
