@@ -2,7 +2,6 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { DIMENSIONS } from "@/lib/dimensions";
 import { DIMENSION_INSIGHTS, SPRINT_CONTENT } from "@/lib/insights";
-import PrintPlaybookButton from "@/components/PrintPlaybookButton";
 
 export default async function PlaybookPage({
   params,
@@ -28,10 +27,6 @@ export default async function PlaybookPage({
 
   return (
     <div style={{ background: "#f8fafc", minHeight: "100vh", padding: "40px 20px", color: "#0f172a" }}>
-      {/* Hide this on print */}
-      <div className="no-print" style={{ maxWidth: 800, margin: "0 auto 24px", display: "flex", justifyContent: "flex-end" }}>
-        <PrintPlaybookButton />
-      </div>
 
       <div 
         style={{
