@@ -29,34 +29,34 @@ export default async function RewardsPage() {
 
   return (
     <>
-      <Header active="Journey & Rewards" />
+      <Header active="Leadership Journey" />
       <main>
         <div className="section-head">
-          <span className="eyebrow">Journey &amp; Rewards</span>
-          <h2>Your High-Performance journey.</h2>
-          <p>Earn MI Credits by reading, reflecting, running your organization&apos;s audit and championing the work. Redeem them for real Management Innovations services.</p>
+          <span className="eyebrow">Leadership Journey &amp; Capabilities</span>
+          <h2>Your High-Performance Journey.</h2>
+          <p>Earn Action Capital by reading, reflecting, running your organization&apos;s diagnostic, and championing the work. Leverage your capital for executive resources and management engagements.</p>
         </div>
 
         <div className="gamification-container" style={{ marginBottom: 24 }}>
           <div className="level-map">
             <div className="level-header">
-              <span className="level-title">Level {lvl} · {name}</span>
+              <span className="level-title">Stage: {name}</span>
               <span style={{ fontSize: "0.9rem", color: "#64748b", fontWeight: 600 }}>
-                {next ? `${progress.xp} / ${next.min} XP` : `${progress.xp} lifetime credits — top level`}
+                {next ? `${progress.xp} / ${next.min} Leadership Capital` : `${progress.xp} Leadership Capital — Top Stage`}
               </span>
             </div>
             <div className="level-progress-container">
               <div className="level-progress-bar" style={{ width: `${Math.min(pct, 100)}%` }} />
             </div>
             <p style={{ fontSize: ".85rem", color: "#64748b", marginTop: 16 }}>
-              Keep earning credits to unlock the next level and new rewards. Your lifetime balance sets your level.
+              Continue your executive development to unlock the next leadership stage and new capabilities.
             </p>
           </div>
         </div>
 
         <div className="gamification-container" style={{ gridTemplateColumns: "1fr", marginBottom: 24 }}>
           <div className="card" style={{ padding: 32, background: "#fafaf8", border: "none" }}>
-            <h4 style={{ marginBottom: 24, fontSize: "1.2rem", fontWeight: 800 }}>Trophy Case</h4>
+            <h4 style={{ marginBottom: 24, fontSize: "1.2rem", fontWeight: 800 }}>Milestone Portfolio</h4>
             <div className="trophy-case">
               {BADGES.map((b) => {
                 const unlocked = badges.has(b.id);
@@ -105,8 +105,8 @@ export default async function RewardsPage() {
                 <div className="leader-row" style={{ padding: "8px 0", borderBottom: "1px solid #f1f5f9" }}><span style={{ color: "#64748b" }}>Response rate</span><span style={{ fontWeight: 600 }}>{org.rate}%</span></div>
                 <p style={{ fontSize: ".85rem", color: "#94a3b8", marginTop: 16 }}>
                   {org.completed === 0
-                    ? "Your audit unlocks once at least one participant completes the survey."
-                    : "A higher response rate makes every score in your report more reliable."}
+                    ? "Your diagnostic report unlocks once at least one participant completes the survey."
+                    : "A higher response rate makes every score in your diagnostic more reliable."}
                 </p>
               </>
             ) : (
@@ -117,10 +117,10 @@ export default async function RewardsPage() {
           </div>
           
           <div className="card" style={{ padding: 32 }}>
-            <h4 style={{ marginBottom: 8 }}>VIP Store</h4>
+            <h4 style={{ marginBottom: 8 }}>Executive Resources</h4>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 24 }}>
-              <p style={{ color: "#64748b", fontSize: ".9rem", margin: 0 }}>Available balance:</p>
-              <strong style={{ color: "#D9A441", fontSize: "1.2rem", fontFamily: "var(--mono)" }}>{progress.wallet} Credits</strong>
+              <p style={{ color: "#64748b", fontSize: ".9rem", margin: 0 }}>Available Action Capital:</p>
+              <strong style={{ color: "#D9A441", fontSize: "1.2rem", fontFamily: "var(--mono)" }}>{progress.wallet}</strong>
             </div>
             
             <div className="vip-store">
@@ -133,7 +133,7 @@ export default async function RewardsPage() {
                       {s.requiresAudit && (
                         <span style={{ fontSize: ".75rem", color: "#94a3b8" }}>
                           <span style={{ color: "#ef4444", marginRight: 4 }}>●</span>
-                          Audit required
+                          Diagnostic required
                         </span>
                       )}
                     </div>
@@ -146,7 +146,7 @@ export default async function RewardsPage() {
             </div>
             {!hasAudit && (
               <p style={{ fontSize: ".75rem", color: "#94a3b8", marginTop: 16, textAlign: "center" }}>
-                Unlock exclusive items by completing your organization audit.
+                Unlock exclusive executive engagements by initiating your organization diagnostic.
               </p>
             )}
           </div>

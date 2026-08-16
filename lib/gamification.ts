@@ -3,10 +3,10 @@ import { CHAPTERS } from "./chapters";
 
 export const LEVELS: { name: string; min: number }[] = [
   { name: "Observer", min: 0 },
-  { name: "Reflector", min: 200 },
-  { name: "Owner", min: 550 },
-  { name: "Asserter", min: 1000 },
-  { name: "Runner", min: 1800 }
+  { name: "Visionary", min: 200 },
+  { name: "Catalyst", min: 550 },
+  { name: "Architect", min: 1000 },
+  { name: "High-Performance Leader", min: 1800 }
 ];
 
 export interface Badge {
@@ -17,15 +17,15 @@ export interface Badge {
 }
 
 export const BADGES: Badge[] = [
-  { id: "b1", ic: "🪞", name: "First Reflection", desc: "Save your first reflection" },
-  { id: "b2", ic: "🧠", name: "Deep Thinker", desc: "Save a reflection on all 11 chapters" },
-  { id: "b3", ic: "🔁", name: "ROAR Complete", desc: "Read from all 4 ROAR phases" },
-  { id: "b8", ic: "🎓", name: "Full Book", desc: "Read all 11 chapters" },
-  { id: "b4", ic: "🏗️", name: "Audit Architect", desc: "Register your organization" },
-  { id: "b6", ic: "👥", name: "Team Builder", desc: "Invite 10 or more participants" },
-  { id: "b7", ic: "🚀", name: "Transformer", desc: "Improve your BUSYness Index by 15+ on a re-run" },
-  { id: "b9", ic: "📣", name: "Ambassador", desc: "3 referrals sign up and start reading" },
-  { id: "b10", ic: "⚡", name: "I KILL BUSYness", desc: "" }
+  { id: "b1", ic: "🪞", name: "Executive Awareness", desc: "Save your first reflection" },
+  { id: "b2", ic: "🧠", name: "Visionary Thinker", desc: "Save a reflection on all 11 chapters" },
+  { id: "b3", ic: "🔁", name: "ROAR Practitioner", desc: "Read from all 4 ROAR phases" },
+  { id: "b8", ic: "🎓", name: "Knowledge Foundation", desc: "Read all 11 chapters" },
+  { id: "b4", ic: "🏗️", name: "Diagnostic Initiated", desc: "Register your organization" },
+  { id: "b6", ic: "👥", name: "Organizational Alignment", desc: "Invite 10 or more participants" },
+  { id: "b7", ic: "🚀", name: "Performance Catalyst", desc: "Improve your BUSYness Index by 15+ on a re-run" },
+  { id: "b9", ic: "📣", name: "Industry Champion", desc: "3 referrals sign up and start reading" },
+  { id: "b10", ic: "⚡", name: "Certified High-Performance Leader", desc: "" }
 ];
 
 export interface StoreItem { name: string; cost: number; requiresAudit: boolean; }

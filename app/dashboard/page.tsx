@@ -86,8 +86,8 @@ export default async function DashboardPage({ searchParams }: { searchParams: { 
                 <span style={{ fontSize: "1.2rem", fontWeight: 800, color: "#D9A441" }}>{progress.xp}</span>
               </div>
               <div>
-                <strong style={{ display: "block", fontSize: "1.1rem" }}>Lifetime XP</strong>
-                <span style={{ color: "#64748b", fontSize: ".85rem" }}>MI Credits earned</span>
+                <strong style={{ display: "block", fontSize: "1.1rem" }}>Leadership Capital</strong>
+                <span style={{ color: "#64748b", fontSize: ".85rem" }}>Action Capital earned</span>
               </div>
             </div>
 
@@ -96,8 +96,8 @@ export default async function DashboardPage({ searchParams }: { searchParams: { 
                 <span style={{ fontSize: "1.2rem", fontWeight: 800, color: "#0f172a" }}>{badges.size}</span>
               </div>
               <div>
-                <strong style={{ display: "block", fontSize: "1.1rem" }}>Trophies</strong>
-                <span style={{ color: "#64748b", fontSize: ".85rem" }}>Badges unlocked</span>
+                <strong style={{ display: "block", fontSize: "1.1rem" }}>Milestones</strong>
+                <span style={{ color: "#64748b", fontSize: ".85rem" }}>Capabilities unlocked</span>
               </div>
             </div>
           </div>
@@ -105,7 +105,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: { 
 
         <div className="grid cols-3" style={{ marginBottom: 10 }}>
           <div className="card mini-card">
-            <span className="eyebrow">Level {levelFor(progress.xp)} · {levelName(progress.xp)}</span>
+            <span className="eyebrow">Stage: {levelName(progress.xp)}</span>
             <h3>Your reading journey</h3>
             <div className="progress-track">
               <div className="progress-fill" style={{ width: `${Math.round((100 * readIds.size) / CHAPTERS.length)}%` }} />
@@ -115,13 +115,13 @@ export default async function DashboardPage({ searchParams }: { searchParams: { 
             </Link>
           </div>
           <div className="card mini-card">
-            <span className="eyebrow">Wallet</span>
-            <h3>MI Credits</h3>
+            <span className="eyebrow">Action Capital</span>
+            <h3>Executive Resources</h3>
             <p>
-              You have <strong>{progress.wallet} MI Credits</strong> to spend.
+              You have <strong>{progress.wallet} Action Capital</strong> available.
             </p>
             <Link href="/rewards" className="btn btn-outline btn-sm" style={{ marginTop: 12 }}>
-              Open Wallet
+              View Resources
             </Link>
           </div>
           {hasCompleted && company ? (
