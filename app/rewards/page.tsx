@@ -60,8 +60,18 @@ export default async function RewardsPage() {
                 const unlocked = badges.has(b.id);
                 return (
                   <div className={`badge-tile ${unlocked ? "unlocked" : ""}`} key={b.id} style={b.id === "b10" ? { gridColumn: "1 / -1", border: unlocked ? "1px solid #0E9C74" : undefined } : undefined}>
-                    <div className="ic">{b.ic}</div>
-                    <h5>{b.name}</h5>
+                    {b.id === "b10" ? (
+                      <div style={{ marginBottom: 16 }}>
+                        <img src="/img/emblem.jpg" alt="Lion Emblem" style={{ width: 140, height: 140, objectFit: "contain", margin: "0 auto", filter: unlocked ? "drop-shadow(0 4px 12px rgba(0,0,0,0.15))" : "grayscale(100%) opacity(40%)" }} />
+                      </div>
+                    ) : (
+                      <div className="ic">{b.ic}</div>
+                    )}
+                    {b.id === "b10" ? (
+                      <h5 style={{ color: "#D9A441", fontWeight: 900, fontSize: "1.05rem", textTransform: "uppercase", letterSpacing: "0.02em" }}>{b.name}</h5>
+                    ) : (
+                      <h5>{b.name}</h5>
+                    )}
                     <p>{b.desc}</p>
                     {b.id === "b10" && unlocked && (
                       <a 
