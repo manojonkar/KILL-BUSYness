@@ -34,7 +34,7 @@ export default async function RewardsPage() {
         <div className="section-head">
           <span className="eyebrow">Leadership Journey &amp; Capabilities</span>
           <h2>Your High-Performance Journey.</h2>
-          <p>Earn Action Capital by reading, reflecting, running your organization&apos;s diagnostic, and championing the work. Leverage your capital for executive resources and management engagements.</p>
+          <p>Earn MI Credits by reading, reflecting, running your organization&apos;s diagnostic, and championing the work. Leverage your credits for VIP store rewards and management engagements.</p>
         </div>
 
         <div className="gamification-container" style={{ marginBottom: 24 }}>
@@ -117,9 +117,9 @@ export default async function RewardsPage() {
           </div>
           
           <div className="card" style={{ padding: 32 }}>
-            <h4 style={{ marginBottom: 8 }}>Executive Resources</h4>
+            <h4 style={{ marginBottom: 8 }}>VIP Store</h4>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 24 }}>
-              <p style={{ color: "#64748b", fontSize: ".9rem", margin: 0 }}>Available Action Capital:</p>
+              <p style={{ color: "#64748b", fontSize: ".9rem", margin: 0 }}>Available MI Credits:</p>
               <strong style={{ color: "#D9A441", fontSize: "1.2rem", fontFamily: "var(--mono)" }}>{progress.wallet}</strong>
             </div>
             
@@ -146,7 +146,7 @@ export default async function RewardsPage() {
             </div>
             {!hasAudit && (
               <p style={{ fontSize: ".75rem", color: "#94a3b8", marginTop: 16, textAlign: "center" }}>
-                Unlock exclusive executive engagements by initiating your organization diagnostic.
+                Unlock exclusive VIP store items by initiating your organization diagnostic.
               </p>
             )}
           </div>

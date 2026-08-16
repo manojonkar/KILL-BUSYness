@@ -87,7 +87,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: { 
               </div>
               <div>
                 <strong style={{ display: "block", fontSize: "1.1rem" }}>Leadership Capital</strong>
-                <span style={{ color: "#64748b", fontSize: ".85rem" }}>Action Capital earned</span>
+                <span style={{ color: "#64748b", fontSize: ".85rem" }}>MI Credits earned</span>
               </div>
             </div>
 
@@ -115,13 +115,13 @@ export default async function DashboardPage({ searchParams }: { searchParams: { 
             </Link>
           </div>
           <div className="card mini-card">
-            <span className="eyebrow">Action Capital</span>
-            <h3>Executive Resources</h3>
+            <span className="eyebrow">Wallet</span>
+            <h3>MI Credits</h3>
             <p>
-              You have <strong>{progress.wallet} Action Capital</strong> available.
+              You have <strong>{progress.wallet} MI Credits</strong> available.
             </p>
             <Link href="/rewards" className="btn btn-outline btn-sm" style={{ marginTop: 12 }}>
-              View Resources
+              View Store
             </Link>
           </div>
           {hasCompleted && company ? (
