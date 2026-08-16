@@ -1,5 +1,6 @@
 import Header from "@/components/Header";
 import StoryForm from "./StoryForm";
+import ReadStoryButton from "./ReadStoryButton";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function StoriesPage({ searchParams }: { searchParams: { error?: string; sent?: string } }) {
@@ -10,7 +11,7 @@ export default async function StoriesPage({ searchParams }: { searchParams: { er
 
   const { data: community } = await supabase
     .from("stories")
-    .select("name, role, body, created_at")
+    .select("id, name, role, body, created_at")
     .eq("consent", true)
     .eq("approved", true)
     .order("created_at", { ascending: false })
@@ -51,6 +52,7 @@ export default async function StoriesPage({ searchParams }: { searchParams: { er
                 <span className="eyebrow">{s.role || "Leader"}</span>
                 <h3 style={{ fontSize: "1.05rem" }}>{s.name}</h3>
                 <p>&ldquo;{s.body}&rdquo;</p>
+                <ReadStoryButton storyId={s.id} loggedIn={!!user} />
               </div>
             ))}
           </div>

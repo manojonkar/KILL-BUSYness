@@ -9,6 +9,9 @@ export async function approveStory(formData: FormData) {
   const { data: story } = await supabase.from("stories").select("user_id, approved").eq("id", id).maybeSingle();
   if (!story || story.approved) return;
   await supabase.from("stories").update({ approved: true }).eq("id", id);
+  
+  // Award 25 points for story approval
+  await supabase.rpc("award_points", { p_user_id: story.user_id, p_amount: 25, p_reason: "Story Approved" });
   const { count } = await supabase
     .from("stories")
     .select("id", { count: "exact", head: true })

@@ -37,6 +37,9 @@ export async function submitStory(formData: FormData) {
     .insert({ user_id: user.id, name, role, email, phone: phone || null, body, consent });
   if (error) fail("We couldn't save your story just then. Please try again.");
 
+  // Award 25 points for sharing a story
+  await supabase.rpc("award_points", { p_user_id: user.id, p_amount: 25, p_reason: "Shared a story" });
+
   await evaluateBadges(supabase, user.id);
 
   const key = process.env.RESEND_API_KEY;
@@ -64,4 +67,21 @@ export async function submitStory(formData: FormData) {
 
   revalidatePath("/stories");
   redirect("/stories?sent=1");
+}
+
+export async function readStory(storyId: string) {
+  const supabase = createClient();
+  const {
+    data: { user }
+  } = await supabase.auth.getUser();
+  if (!user) return;
+
+  // Insert into story_reads. If successful (user hasn't read it yet), award 5 points.
+  const { error } = await supabase
+    .from("story_reads")
+    .insert({ user_id: user.id, story_id: storyId });
+
+  if (!error) {
+    await supabase.rpc("award_points", { p_user_id: user.id, p_amount: 5, p_reason: "Read a story" });
+  }
 }

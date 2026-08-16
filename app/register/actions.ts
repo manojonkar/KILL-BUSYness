@@ -16,6 +16,21 @@ export async function registerAccount(formData: FormData) {
   if (error) {
     redirect(`/register?error=${encodeURIComponent(error.message)}`);
   }
+
+  // Check if they completed an audit survey, and award 25 points if they did
+  if (data.user) {
+    const { data: p } = await supabase
+      .from("participants")
+      .select("id")
+      .eq("email", email)
+      .eq("status", "completed")
+      .maybeSingle();
+      
+    if (p) {
+      await supabase.rpc("award_points", { p_user_id: data.user.id, p_amount: 25, p_reason: "Completed organization diagnostic" });
+    }
+  }
+
   if (data.session) {
     redirect("/dashboard");
   }
