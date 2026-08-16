@@ -72,7 +72,7 @@ export default async function RewardsPage() {
                     ) : (
                       <h5>{b.name}</h5>
                     )}
-                    <p>{b.desc}</p>
+                    {b.desc && <p>{b.desc}</p>}
                     {b.id === "b10" && unlocked && (
                       <a 
                         href={`https://www.linkedin.com/profile/add?startTask=CERTIFICATION_NAME&name=${encodeURIComponent("I KILL BUSYness")}&organizationName=${encodeURIComponent("Management Innovations")}&certUrl=${encodeURIComponent("https://www.killbusyness.com")}`}
