@@ -463,56 +463,55 @@ export default async function ReportPage({ params }: { params: { companyId: stri
         <div className="card" style={{ padding: 26, marginBottom: 20 }}>
           <h4 style={{ marginBottom: 4 }}>Your 90-Day Action Sprint</h4>
           <p style={{ fontSize: ".82rem", color: "var(--ink-soft)", marginBottom: 20 }}>
-            One month. One dimension. One move. The most effective organizations don&apos;t fix everything at once — they sequence their interventions so each one builds on the last.
+            The first four phases are about you and your leadership team creating the right environment in which you can build the High-Performance Organisation (HPO).
           </p>
-          {weakest.map((d, i) => {
-            const sprint = SPRINT_CONTENT[d.key];
-            if (!sprint) return null;
-            const months = [
-              { label: `Month ${i * 1 + 1}`, text: i === 0 ? sprint.month1 : i === 1 ? sprint.month2 : sprint.month3, color: "#0E9C74" },
-            ];
-            const monthText = i === 0 ? sprint.month1 : i === 1 ? sprint.month2 : sprint.month3;
-            const mColor = i === 0 ? "#0E9C74" : i === 1 ? "#D9A441" : "#64748b";
+          {[
+            {
+              phase: "Phase 1: Educate Everyone on NFR",
+              duration: "1–2 weeks",
+              text: "Ensure that every single person in the organisation has heard No Follow-Up Required directly from a leader. Eliminate follow-up loops with formalised SLAs, calendar-driven accountability, and thoughtful commitments.",
+              color: "#0E9C74"
+            },
+            {
+              phase: "Phase 2: Implement NFR for Yourself and Your Leadership Team",
+              duration: "30 days",
+              text: "Withdraw from commitments and change SLAs that are not adding value. Achieve NFR Leader Certification by keeping every promise, or communicating proactively to all concerned persons before any breakdown.",
+              color: "#0284c7"
+            },
+            {
+              phase: "Phase 3: Project Whitespace: Empty Your Calendar by 50%",
+              duration: "2–3 weeks",
+              text: "Sort all activities into value-creation vs. lack-of-trust management. Cut non-priority work. Block and protect 50% of your freed calendar immediately for deep work on the future, culture, strategy, and execution.",
+              color: "#7c3aed"
+            },
+            {
+              phase: "Phase 4: The Sensing Journey",
+              duration: "30 days",
+              text: "Have deep, generative listening conversations with staff across levels, clients, experts, and partners to uncover new data, new perspectives, and new possibilities.",
+              color: "#ea580c"
+            }
+          ].map((sprintPhase, i) => {
             return (
-              <div key={d.key} className="sprint-card">
+              <div key={`phase-${i}`} className="sprint-card">
                 <div className="sprint-head">
-                  <span className="sprint-month" style={{ background: mColor + "20", color: mColor }}>Month {i + 1}</span>
-                  <strong style={{ fontSize: ".88rem", color: "#0f172a" }}>{d.label}</strong>
-                  <span style={{ fontSize: ".75rem", color: "#94a3b8", marginLeft: "auto" }}>Score: {d.score}/100</span>
+                  <span className="sprint-month" style={{ background: sprintPhase.color + "15", color: sprintPhase.color }}>{sprintPhase.duration}</span>
+                  <strong style={{ fontSize: ".88rem", color: "#0f172a" }}>{sprintPhase.phase}</strong>
                 </div>
                 <div className="sprint-body">
-                  {monthText}
+                  <p style={{ margin: "0 0 16px", color: "#475569", lineHeight: 1.6 }}>{sprintPhase.text}</p>
                   <SprintAssigner 
                     companyId={company.id}
                     monthIndex={i}
-                    taskTitle={d.label}
+                    taskTitle={sprintPhase.phase}
                     participants={(participantRows || []).map(p => ({ id: p.id, name: p.name || "Team Member" }))}
                     existingAssignment={assignments?.find(a => a.month_index === i)}
                   />
-                  {i === 0 && (
-                    <div style={{ marginTop: 24, paddingTop: 16, borderTop: "1px solid #e2e8f0", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                      <div>
-                        <strong style={{ display: "block", fontSize: ".85rem", color: "#0f172a" }}>Need more detail?</strong>
-                        <span style={{ fontSize: ".75rem", color: "#64748b" }}>Generate a printable action plan for this dimension.</span>
-                      </div>
-                      <a href={`/report/${company.id}/playbook/${d.key}`} target="_blank" rel="noopener noreferrer" className="btn btn-outline btn-sm" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                          <polyline points="14 2 14 8 20 8"></polyline>
-                          <line x1="16" y1="13" x2="8" y2="13"></line>
-                          <line x1="16" y1="17" x2="8" y2="17"></line>
-                          <polyline points="10 9 9 9 8 9"></polyline>
-                        </svg>
-                        Generate Playbook
-                      </a>
-                    </div>
-                  )}
                 </div>
               </div>
             );
           })}
           <div style={{ marginTop: 16, padding: "12px 16px", background: "#f8f7f4", borderRadius: 8, fontSize: ".8rem", color: "#64748b" }}>
-            <strong style={{ color: "#0f172a" }}>After 90 days:</strong> Re-run this survey. Compare the scores. The change — or the resistance to change — will tell you exactly what to focus on next.
+            <strong style={{ color: "#0f172a" }}>After 90 days:</strong> The remaining eight phases will take approximately 12 months. Re-run this survey. Compare the scores to prove the needle moved.
           </div>
         </div>
 
