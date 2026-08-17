@@ -1,12 +1,12 @@
 import { notFound } from "next/navigation";
 import Header from "@/components/Header";
 import SurveyClient from "./SurveyClient";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/server";
 import { DIMENSIONS } from "@/lib/dimensions";
 import { computeDimensionScores, overallScore } from "@/lib/scoring";
 
 export default async function SurveyPage({ params }: { params: { token: string } }) {
-  const supabase = createClient();
+  const supabase = createAdminClient();
   const { data, error } = await supabase.rpc("get_survey_state", { p_token: params.token });
   const state = data?.[0];
   if (error || !state) notFound();
