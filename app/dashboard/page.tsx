@@ -137,12 +137,15 @@ export default async function DashboardPage({ searchParams }: { searchParams: { 
         </div>
 
         <div id="audit" className="section-head" style={{ marginTop: 40 }}>
-          <span className="eyebrow">Organization Audit</span>
+          <span className="eyebrow">100% Free Organization Audit</span>
           <h2>Measure your BUSYness Index. Build your High-Performance plan.</h2>
           <p>
             An organization-wide diagnostic across the 10 dimensions of KILL BUSYness — from the owner/CEO through the
             leadership team to the wider organization — scored into a full report with a chapter-linked action plan.
           </p>
+          <div style={{ display: "inline-block", marginTop: 16, padding: "6px 14px", background: "#ecfdf5", color: "#047857", borderRadius: 20, fontSize: "0.85rem", fontWeight: 700, border: "1px solid #10b981" }}>
+            ✓ Completely Free for your entire organization
+          </div>
         </div>
 
         {searchParams?.error ? <p style={{ color: "#9B2226", fontSize: ".85rem", marginBottom: 14 }}>{searchParams.error}</p> : null}

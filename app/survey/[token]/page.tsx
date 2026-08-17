@@ -98,9 +98,12 @@ export default async function SurveyPage({ params }: { params: { token: string }
       <Header active="" />
       <main>
         <div className="section-head">
-          <span className="eyebrow">Organization Audit</span>
+          <span className="eyebrow">100% Free Organization Audit</span>
           <h2>{state.company_name} — BUSYness Index Survey</h2>
-          <p>Answer honestly — this is confidential and only feeds into your organization&apos;s aggregate report.</p>
+          <p>Answer honestly — this is completely free, confidential and only feeds into your organization&apos;s aggregate report.</p>
+          <div style={{ display: "inline-block", marginTop: 12, padding: "4px 12px", background: "#ecfdf5", color: "#047857", borderRadius: 20, fontSize: "0.8rem", fontWeight: 700, border: "1px solid #10b981" }}>
+            ✓ Free & Confidential
+          </div>
         </div>
         <SurveyClient token={params.token} initialAnswers={state.answers || {}} participantName={state.participant_name} companyName={state.company_name} />
       </main>

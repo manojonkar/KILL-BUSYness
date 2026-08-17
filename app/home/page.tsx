@@ -65,9 +65,9 @@ export default function HomePage() {
             </Link>
           </div>
           <div className="card mini-card">
-            <span className="eyebrow">Organization</span>
+            <span className="eyebrow" style={{ color: "#047857" }}>100% Free Organization Audit</span>
             <h3>Audit status</h3>
-            <p>Register your company, invite your owner/CEO and leadership team, and get a full diagnostic report with an action plan.</p>
+            <p>Register your company, invite your owner/CEO and leadership team, and get a free full diagnostic report with an action plan.</p>
             <Link href="/register" className="btn btn-teal btn-sm" style={{ marginTop: 12 }}>
               Go to Audit
             </Link>

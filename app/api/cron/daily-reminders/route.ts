@@ -79,8 +79,8 @@ export async function GET(request: Request) {
           subject: `${reminderText}: Invitation to the KILL BUSYness Organization Audit`,
           html: `<p>Hi ${p.name || "there"},</p>
                  <p>This is a gentle reminder that <strong>${companyName}</strong> invited you to take part in the KILL BUSYness Organization Audit.</p>
-                 <p><a href="${siteUrl}/survey/${p.invite_token}">Click here to start the survey</a></p>
-                 <p>It takes about 10 minutes and your responses are completely confidential.</p>`
+                 <p><a href="${siteUrl}/survey/${p.invite_token}">Click here to start the free survey</a></p>
+                 <p>It takes about 10 minutes and your responses are completely confidential and free.</p>`
         });
         sentCount++;
       }
