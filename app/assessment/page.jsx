@@ -554,7 +554,7 @@ export default function XOSelfAssessment() {
             </p>
 
             <div className="xo-footer-actions" data-html2canvas-ignore="true">
-              <a href="https://www.highperformanceorganizations.com/" target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none' }}>
+              <a href="https://www.killbusyness.com/login" target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none' }}>
                 <button className="xo-btn xo-btn-primary" style={{ background: '#C9A24B', color: '#14213D', fontWeight: 'bold' }}>Unlock Full Team Audit</button>
               </a>
               <button className="xo-btn xo-btn-primary" onClick={downloadBadge}>Download Badge</button>
