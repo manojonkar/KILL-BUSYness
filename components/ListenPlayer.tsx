@@ -25,7 +25,7 @@ export default function ListenPlayer({ title, summary }: { title: string; summar
 
   return (
     <button type="button" className="btn btn-dark btn-sm" onClick={toggle}>
-      {playing ? "⏹ Stop" : "🎧 Listen (~5 min)"}
+      {playing ? "Stop Audio" : "Play Audio (~5 min)"}
     </button>
   );
 }
