@@ -8,8 +8,8 @@ import { Resend } from "resend";
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 const PHONE_RE = /^[0-9+()\-\s]{7,20}$/;
 
-function fail(msg: string): never {
-  redirect("/stories?error=" + encodeURIComponent(msg));
+function fail(msg: string) {
+  return { error: msg };
 }
 
 export async function submitStory(formData: FormData) {
@@ -26,16 +26,16 @@ export async function submitStory(formData: FormData) {
   const body = String(formData.get("body") || "").trim();
   const consent = formData.get("consent") === "on";
 
-  if (!name) fail("Please add your name.");
-  if (!EMAIL_RE.test(email)) fail("Please enter a valid email address so we can verify your story.");
-  if (phone && !PHONE_RE.test(phone)) fail("That phone number doesn't look right. Use digits, spaces and + ( ) - only.");
-  if (body.length < 40) fail("Please tell us a little more — at least a couple of sentences.");
-  if (!consent) fail("Please confirm you're happy for your story to be shared publicly.");
+  if (!name) return fail("Please add your name.");
+  if (!EMAIL_RE.test(email)) return fail("Please enter a valid email address so we can verify your story.");
+  if (phone && !PHONE_RE.test(phone)) return fail("That phone number doesn't look right. Use digits, spaces and + ( ) - only.");
+  if (body.length < 40) return fail("Please tell us a little more — at least a couple of sentences.");
+  if (!consent) return fail("Please confirm you're happy for your story to be shared publicly.");
 
   const { error } = await supabase
     .from("stories")
     .insert({ user_id: user.id, name, role, email, phone: phone || null, body, consent });
-  if (error) fail("We couldn't save your story just then. Please try again.");
+  if (error) return fail("We couldn't save your story just then. Please try again.");
 
   // Award 25 points for sharing a story
   await supabase.rpc("award_points", { p_user_id: user.id, p_amount: 25, p_reason: "Shared a story" });
@@ -66,7 +66,7 @@ export async function submitStory(formData: FormData) {
   }
 
   revalidatePath("/stories");
-  redirect("/stories?sent=1");
+  return { success: true };
 }
 
 export async function readStory(storyId: string) {

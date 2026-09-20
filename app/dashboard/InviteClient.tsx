@@ -205,9 +205,9 @@ export default function InviteClient({
                             <input type="hidden" name="participantId" value={p.id} />
                             <button className="btn btn-outline btn-sm" type="submit" title="Send the invite email again">Resend</button>
                           </form>
-                          <form action={removeAction} onSubmit={(e) => { if (!confirm(`Remove ${p.name} and free up their seat?`)) e.preventDefault(); }}>
+                          <form action={removeAction} onSubmit={(e) => { if (!confirm(`Remove ${p.name}?`)) e.preventDefault(); }}>
                             <input type="hidden" name="participantId" value={p.id} />
-                            <button className="btn btn-outline btn-sm" type="submit" title="Remove and free the seat">Remove</button>
+                            <button className="btn btn-outline btn-sm" type="submit" title="Remove">Remove</button>
                           </form>
                         </span>
                       )}

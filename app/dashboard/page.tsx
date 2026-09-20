@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import Header from "@/components/Header";
 import InviteClient from "./InviteClient";
 import { addParticipant, addBulkParticipants, resendInvite, removeParticipant } from "./sendInvite";
-import { finishRegistration } from "./actions";
+import RegistrationForm from "./RegistrationForm";
 import { createClient } from "@/lib/supabase/server";
 import { getProgress, getChapterReads, getBadges, touchStreak, evaluateBadges, levelFor, levelName } from "@/lib/gamification";
 import { CHAPTERS } from "@/lib/chapters";
@@ -71,7 +71,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: { 
       <main>
         <div className="hero-panel">
           <h1>Welcome back{user.user_metadata?.name ? `, ${user.user_metadata.name}` : ""}.</h1>
-          <p>Your reading journey, XP, and Organization Audit — all in one place.</p>
+          <p>Your reading journey, MI Credits, and Organization Audit — all in one place.</p>
           <div className="stat-row" style={{ display: "flex", gap: 32, flexWrap: "wrap", marginTop: 32 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
               <CircularProgress percent={Math.round((readIds.size / CHAPTERS.length) * 100)} value={`${readIds.size}/${CHAPTERS.length}`} label="" />
@@ -137,14 +137,14 @@ export default async function DashboardPage({ searchParams }: { searchParams: { 
         </div>
 
         <div id="audit" className="section-head" style={{ marginTop: 40 }}>
-          <span className="eyebrow">100% Free Organization Audit</span>
+          <span className="eyebrow">Organization Audit</span>
           <h2>Measure your BUSYness Index. Build your High-Performance plan.</h2>
           <p>
             An organization-wide diagnostic across the 10 dimensions of KILL BUSYness — from the owner/CEO through the
             leadership team to the wider organization — scored into a full report with a chapter-linked action plan.
           </p>
           <div style={{ display: "inline-block", marginTop: 16, padding: "6px 14px", background: "#ecfdf5", color: "#047857", borderRadius: 20, fontSize: "0.85rem", fontWeight: 700, border: "1px solid #10b981" }}>
-            ✓ Completely Free for your entire organization
+            ✓ Include your entire team in the organizational audit
           </div>
         </div>
 
@@ -157,41 +157,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: { 
             <p style={{ color: "var(--ink-soft)", fontSize: ".88rem", marginBottom: 22 }}>
               Set up your company below — you can invite your team the moment you register.
             </p>
-            <form action={finishRegistration} className="form-grid">
-              <div className="field">
-                <label>Company Name</label>
-                <input name="name" placeholder="e.g. Meridian Industries Pvt Ltd" required />
-              </div>
-              <div className="field">
-                <label>Industry</label>
-                <input name="industry" placeholder="e.g. Manufacturing" />
-              </div>
-              <div className="field">
-                <label>Company Size</label>
-                <select name="size" defaultValue="250-500">
-                  <option>1-50</option>
-                  <option>50-250</option>
-                  <option>250-500</option>
-                  <option>500-2000</option>
-                  <option>2000+</option>
-                </select>
-              </div>
-              <div className="field">
-                <label>Number of Seats to Invite</label>
-                <input name="seats" type="number" min={1} defaultValue={10} />
-              </div>
-              <div className="field full">
-                <label>Your Name (Admin)</label>
-                <input name="adminName" defaultValue={user.user_metadata?.name || ""} placeholder="Full name" />
-              </div>
-              <div className="field full">
-                <label>Your Email (Admin)</label>
-                <input name="adminEmail" defaultValue={user.email || ""} placeholder="you@company.com" />
-              </div>
-              <button className="btn btn-primary form-grid full" style={{ marginTop: 4, gridColumn: "1/-1" }} type="submit">
-                Register Company (+75 MI Credits)
-              </button>
-            </form>
+            <RegistrationForm defaultName={user.user_metadata?.name || ""} defaultEmail={user.email || ""} />
           </div>
         ) : (
           <InviteClient seats={company.seats} participants={participants} addAction={boundAdd} bulkAction={boundBulk} resendAction={resendInvite} removeAction={removeParticipant} siteUrl={process.env.NEXT_PUBLIC_SITE_URL || "https://www.killbusyness.com"} />

@@ -1,17 +1,17 @@
 import Link from "next/link";
 import Header from "@/components/Header";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { FORMATS, getSettings } from "@/lib/book";
 import { getProgress } from "@/lib/gamification";
 import { placeOrder, submitTransactionId } from "./actions";
 import OrderForm from "./OrderForm";
 
-const ORDER = ["ebook", "paperback", "hardcover"];
+const ORDER = ["ebook", "paperback", "audiobook"];
 
 export default async function BuyPage({
   searchParams
 }: {
-  searchParams: { format?: string; error?: string; ref?: string; paid?: string };
+  searchParams: { format?: string; error?: string; ref?: string; paid?: string; intl?: string };
 }) {
   const supabase = createClient();
   const settings = await getSettings(supabase);
@@ -19,7 +19,6 @@ export default async function BuyPage({
   const fmt = FORMATS[selectedKey];
   const upi = settings.upi_id || "";
   const payee = settings.upi_payee || "Management Innovations";
-  const amazon = settings.amazon_url || "";
   const upiReady = upi && !upi.startsWith("REPLACE_");
 
   const { data: { user } } = await supabase.auth.getUser();
@@ -31,7 +30,8 @@ export default async function BuyPage({
 
   let orderAmount = fmt.price;
   if (searchParams?.ref) {
-    const { data: orderData } = await supabase
+    const adminSupabase = createAdminClient();
+    const { data: orderData } = await adminSupabase
       .from("book_orders")
       .select("amount")
       .eq("ref", searchParams.ref)
@@ -40,6 +40,12 @@ export default async function BuyPage({
       orderAmount = orderData.amount;
     }
   }
+
+  const amazon = settings.amazon_url || "";
+  const upiUrl = `upi://pay?pa=${upi}&pn=${encodeURIComponent(payee)}&am=${orderAmount}&cu=INR`;
+  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=168x168&data=${encodeURIComponent(upiUrl)}`;
+
+  const isIntl = searchParams?.intl === "true";
 
   // Thank You page after they pay through UPI QR Code
   if (searchParams?.ref && searchParams.paid === "true") {
@@ -53,7 +59,7 @@ export default async function BuyPage({
             <p>Your order reference is <strong>{searchParams.ref}</strong>.</p>
           </div>
           <div className="card" style={{ padding: 30, maxWidth: 620 }}>
-            <h3 style={{ marginBottom: 12, color: "var(--teal-ink, #0f766e)" }}>✔ Payment Details Submitted</h3>
+            <h3 style={{ marginBottom: 12, color: "var(--teal-ink, #0f766e)" }}>&#10004; Payment Details Submitted</h3>
             <p style={{ fontSize: ".92rem", color: "var(--ink-soft)", marginBottom: 18 }}>
               We have recorded your payment status for reference <strong>{searchParams.ref}</strong>.
             </p>
@@ -84,146 +90,151 @@ export default async function BuyPage({
         <main>
           <div className="section-head">
             <span className="eyebrow">Order Placed</span>
-            <h2>Almost there — one payment to go.</h2>
+            <h2>Almost there &mdash; one payment to go.</h2>
             <p>Your order reference is <strong>{searchParams.ref}</strong>. We&apos;ve emailed you a copy.</p>
           </div>
-          <div className="card" style={{ padding: 30, maxWidth: 620 }}>
-            <h3 style={{ marginBottom: 10 }}>Pay ₹{orderAmount.toLocaleString("en-IN")} by UPI</h3>
-            {upiReady ? (
-              <>
-                <p style={{ fontSize: ".9rem", color: "var(--ink-soft)", marginBottom: 14 }}>
-                  Scan the QR below, or send the amount to the UPI ID shown.
-                </p>
-                <div className="card" style={{ padding: 18, marginBottom: 16, background: "var(--surface-2)", display: "flex", gap: 18, alignItems: "center", flexWrap: "wrap" }}>
-                  <div style={{ background: "#fff", padding: 10, borderRadius: 8, flex: "0 0 auto" }}>
-                    <img
-                      src={`/img/upi-qr-${fmt.key}`}
-                      alt={`Scan to pay Rs ${orderAmount} by UPI`}
-                      width={168}
-                      height={168}
-                      style={{ display: "block", width: 168, height: 168 }}
-                    />
-                  </div>
-                  <div style={{ flex: "1 1 200px" }}>
-                    <div style={{ fontSize: ".72rem", fontFamily: "var(--mono)", textTransform: "uppercase", letterSpacing: ".1em", color: "var(--ink-faint)", marginBottom: 6 }}>
-                      Scan with any UPI app
-                    </div>
-                    <div style={{ fontFamily: "var(--mono)", fontSize: "1rem", fontWeight: 700, wordBreak: "break-all" }}>{upi}</div>
-                    <div style={{ fontSize: ".8rem", color: "var(--ink-soft)", marginTop: 4 }}>{payee}</div>
-                    <div style={{ fontSize: ".8rem", color: "var(--ink-soft)", marginTop: 8 }}>
-                      The QR already carries the amount, ₹{orderAmount.toLocaleString("en-IN")}.
-                    </div>
+          <div className="card" style={{ padding: 30, maxWidth: 840 }}>
+            <div className="mobile-stack" style={{ alignItems: "stretch", gap: 32 }}>
+              
+              {/* Indian Buyers */}
+              {!isIntl && (
+                <div style={{ flex: 1 }}>
+                  <h3 style={{ marginBottom: 10, paddingBottom: 10, borderBottom: "1px solid var(--line)" }}>Indian Buyers</h3>
+                  <p style={{ fontWeight: 600, color: "var(--teal-ink)", marginBottom: 12 }}>Pay Rs. {orderAmount.toLocaleString("en-IN")}</p>
+                  {upiReady ? (
+                    <>
+                      <p style={{ fontSize: ".9rem", color: "var(--ink-soft)", marginBottom: 14 }}>
+                        Scan the QR below, or send the amount to the UPI ID shown.
+                      </p>
+                      <div className="card" style={{ padding: 18, marginBottom: 16, background: "var(--surface-2)", display: "flex", gap: 18, alignItems: "center", flexWrap: "wrap" }}>
+                        <div style={{ background: "#fff", padding: 10, borderRadius: 8, flex: "0 0 auto" }}>
+                          <img
+                            src={qrUrl}
+                            alt={`Scan to pay Rs ${orderAmount} by UPI`}
+                            width={168}
+                            height={168}
+                            style={{ display: "block", width: 168, height: 168 }}
+                          />
+                        </div>
+                        <div style={{ flex: "1 1 120px" }}>
+                          <div style={{ fontSize: ".72rem", fontFamily: "var(--mono)", textTransform: "uppercase", letterSpacing: ".1em", color: "var(--ink-faint)", marginBottom: 6 }}>
+                            Scan with any UPI app
+                          </div>
+                          <div style={{ fontFamily: "var(--mono)", fontSize: "1rem", fontWeight: 700, wordBreak: "break-all" }}>{upi}</div>
+                          <div style={{ fontSize: ".8rem", color: "var(--ink-soft)", marginTop: 4 }}>{payee}</div>
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <p style={{ fontSize: ".9rem", color: "#9B2226", marginBottom: 14 }}>
+                      Payment details are being set up. We will email you the payment instructions shortly.
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {/* International Buyers */}
+              {(isIntl || !searchParams?.ref) && (
+                <div style={{ flex: 1 }}>
+                  <h3 style={{ marginBottom: 10, paddingBottom: 10, borderBottom: "1px solid var(--line)" }}>International Payments</h3>
+                  
+                  <div style={{ padding: "20px 0" }}>
+                    {isIntl && (
+                      <p style={{ fontWeight: 600, color: "var(--teal-ink)", marginBottom: 16, fontSize: "1.1rem" }}>
+                        Pay US$ {orderAmount}
+                      </p>
+                    )}
+                    <a 
+                      href="https://rzp.io/rzp/KILLBUSYness" 
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      className="btn btn-primary"
+                      style={{ display: "block", textAlign: "center", marginBottom: 20 }}
+                    >
+                      Pay Now
+                    </a>
+                    
+                    <p style={{ fontSize: ".9rem", color: "var(--ink)", lineHeight: 1.5 }}>
+                      If you face any difficulty, write to WhatsApp: <strong>91-9106456275</strong>
+                    </p>
                   </div>
                 </div>
-              </>
-            ) : (
-              <p style={{ fontSize: ".9rem", color: "#9B2226", marginBottom: 14 }}>
-                Payment details are being set up. We will email you the payment instructions shortly.
-              </p>
-            )}
-            <p style={{ fontSize: ".9rem", marginBottom: 8 }}>
-              <strong>Important:</strong> put <strong>{searchParams.ref}</strong> in the payment note so we can match your
-              payment to your order.
-            </p>
-            <p style={{ fontSize: ".86rem", color: "var(--ink-soft)", marginBottom: 20 }}>
-              {fmt.physical
-                ? "Once payment is confirmed we courier your copy to the address you gave."
-                : "Once payment is confirmed we email the eBook to the address you gave."}
-            </p>
+              )}
 
-            {/* Form to submit UPI Transaction ID / UTR */}
-            <form action={submitTransactionId} style={{ borderTop: "1px solid var(--line)", paddingTop: 20 }}>
-              <input type="hidden" name="ref" value={searchParams.ref} />
-              <input type="hidden" name="format" value={fmt.key} />
-              <label style={{ display: "block", fontSize: ".84rem", fontWeight: 600, color: "var(--ink)", marginBottom: 6 }}>
-                Enter UPI Transaction ID / Ref No. / UTR (optional)
-              </label>
-              <p style={{ fontSize: ".76rem", color: "var(--ink-soft)", marginBottom: 12 }}>
-                Pasting the transaction ID from your UPI app helps us verify your payment much faster.
+            </div>
+
+            <div style={{ marginTop: 24, paddingTop: 20, borderTop: "1px solid var(--line)" }}>
+              <p style={{ fontSize: ".9rem", marginBottom: 8 }}>
+                <strong>Important:</strong> Please put <strong>{searchParams.ref}</strong> in your payment note or reply email so we can match your payment to your order.
               </p>
-              <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                <input 
-                  name="utr" 
-                  placeholder="e.g. 12-digit UPI Ref / UTR number"
-                  style={{ 
-                    flex: "1 1 240px", 
-                    padding: "8px 12px", 
-                    borderRadius: 6, 
-                    border: "1px solid var(--line, #e2e8f0)",
-                    fontSize: ".88rem"
-                  }}
-                />
-                <button className="btn btn-teal" type="submit">
-                  I have paid
-                </button>
+              
+              <form action={submitTransactionId} style={{ marginTop: 24, padding: 20, background: "#f8fafc", borderRadius: 8, border: "1px solid #e2e8f0" }}>
+              <input type="hidden" name="ref" value={searchParams.ref} />
+              <input type="hidden" name="format" value={selectedKey} />
+              <h4 style={{ marginBottom: 8 }}>I have paid!</h4>
+              <p style={{ fontSize: ".85rem", color: "var(--ink-soft)", marginBottom: 16 }}>
+                Submit your UTR (Transaction Reference) number below so we can verify it quickly.
+              </p>
+              <div style={{ display: "flex", gap: 12 }}>
+                <input type="text" name="utr" placeholder="Enter UTR Number" required style={{ flex: 1 }} />
+                <button type="submit" className="btn btn-primary">Submit UTR</button>
               </div>
             </form>
+            </div>
           </div>
         </main>
       </>
     );
   }
 
+  // The actual Buy Form
   return (
     <>
       <Header active="" />
       <main>
-        <div className="section-head">
-          <span className="eyebrow">Buy the book</span>
-          <h2>KILL BUSYness</h2>
-          <p>Choose your format, then fill in where it should go.</p>
+        <div className="section-head" style={{ marginBottom: 40 }}>
+          <span className="eyebrow">Buy Now</span>
+          <h2>Ready to Kill BUSYness?</h2>
+          <p>You&apos;re ordering the <strong>{fmt.label}</strong>.</p>
         </div>
 
-        <div className="grid cols-3" style={{ marginBottom: 26 }}>
-          {ORDER.map((k) => {
-            const f = FORMATS[k];
-            const on = k === selectedKey;
-            return (
-              <Link
-                key={k}
-                href={`/buy?format=${k}`}
-                className="card mini-card"
-                style={{
-                  cursor: "pointer",
-                  borderColor: on ? "var(--teal)" : "var(--line)",
-                  borderWidth: on ? 2 : 1,
-                  borderStyle: "solid"
-                }}
-              >
-                <span className="eyebrow" style={{ color: on ? "var(--teal-ink)" : "var(--ink-faint)" }}>
-                  {on ? "Selected" : "Choose"}
-                </span>
-                <h3 style={{ fontSize: "1.1rem" }}>{f.label}</h3>
-                <p style={{ fontFamily: "var(--mono)", fontWeight: 700, color: "var(--ink)", marginBottom: 6 }}>
-                  ₹{f.price.toLocaleString("en-IN")}
-                </p>
-                <p>{f.blurb}</p>
-              </Link>
-            );
-          })}
+        <div className="mobile-stack" style={{ gap: 32, alignItems: "start" }}>
+          <div>
+            <div style={{ display: "flex", gap: 12, marginBottom: 24, flexWrap: "wrap" }}>
+              {ORDER.map((k) => (
+                <Link
+                  key={k}
+                  href={`/buy?format=${k}`}
+                  className={`btn btn-sm ${k === selectedKey ? "btn-dark" : "btn-outline"}`}
+                >
+                  {FORMATS[k].label}
+                </Link>
+              ))}
+            </div>
+
+            <div className="card" style={{ padding: 32, marginBottom: 24 }}>
+              <h3 style={{ marginBottom: 8, fontSize: "1.4rem" }}>{fmt.label}</h3>
+              <p style={{ fontSize: "1.2rem", fontWeight: 600, color: "var(--teal-ink)", marginBottom: 16 }}>
+                Rs. {fmt.price.toLocaleString("en-IN")}
+                {fmt.usdPrice && <span style={{ color: "var(--ink-soft)", fontSize: "1rem", marginLeft: 12, fontWeight: 500 }}>| US$ {fmt.usdPrice}</span>}
+              </p>
+              <p style={{ color: "var(--ink-soft)" }}>{fmt.blurb}</p>
+              {fmt.physical && amazon && (
+                <div style={{ marginTop: 20, paddingTop: 16, borderTop: "1px solid var(--line)" }}>
+                  <p style={{ fontSize: ".9rem", color: "var(--ink-soft)", margin: 0 }}>
+                    <em>* Also available on Amazon.</em>
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+          <div className="card" style={{ padding: "30px 24px" }}>
+            <h3 style={{ marginBottom: 20, fontSize: "1.2rem", borderBottom: "1px solid var(--line)", paddingBottom: 12 }}>
+              Delivery Details
+            </h3>
+            <OrderForm fmt={fmt} placeOrder={placeOrder} wallet={wallet} />
+          </div>
         </div>
-
-        {searchParams?.error ? (
-          <p style={{ color: "#9B2226", fontSize: ".85rem", marginBottom: 14 }}>{searchParams.error}</p>
-        ) : null}
-
-        <div className="card" style={{ padding: 30, maxWidth: 720 }}>
-          <h3 style={{ marginBottom: 4 }}>Your details — {fmt.label}</h3>
-          <p style={{ color: "var(--ink-soft)", fontSize: ".85rem", marginBottom: 20 }}>
-            ₹{fmt.price.toLocaleString("en-IN")} · {fmt.blurb}
-          </p>
-          <OrderForm fmt={fmt} placeOrder={placeOrder} wallet={wallet} />
-        </div>
-
-        {amazon ? (
-          <p style={{ fontSize: ".85rem", color: "var(--ink-soft)", marginTop: 20 }}>
-            Outside India?{" "}
-            <a href={amazon} target="_blank" rel="noopener noreferrer" style={{ color: "var(--coral-ink)", fontWeight: 700 }}>
-              Buy on Amazon
-            </a>
-            .
-          </p>
-        ) : null}
       </main>
     </>
   );

@@ -1,11 +1,327 @@
 /* Premium Gamification CSS for KILL BUSYness Portal */
+/* Redesigned: Journey Map, Earning Pathways, Upgraded Badges, Tiered Store */
 
 .gamification-container {
   display: grid;
   gap: 24px;
 }
 
-/* Trophy Case Grid */
+/* ══════════════════════════════════════════════════════
+   A. ROAR JOURNEY MAP
+   ══════════════════════════════════════════════════════ */
+
+.journey-map {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 32px 36px;
+  margin-bottom: 28px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.03);
+  position: relative;
+}
+
+.journey-nodes {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  position: relative;
+  z-index: 2;
+  margin-bottom: 8px;
+}
+
+.journey-node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  position: relative;
+}
+
+.journey-node-circle {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 0.9rem;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  z-index: 2;
+}
+
+.journey-node.future .journey-node-circle {
+  background: #f1f5f9;
+  border: 2px solid #cbd5e1;
+  color: #94a3b8;
+}
+
+.journey-node.completed .journey-node-circle {
+  background: #0E9C74;
+  border: 2px solid #0E9C74;
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(14, 156, 116, 0.25);
+}
+
+.journey-node.active .journey-node-circle {
+  background: #fff;
+  border: 3px solid #0E9C74;
+  color: #0E9C74;
+  width: 52px;
+  height: 52px;
+  font-size: 1rem;
+  box-shadow: 0 0 0 6px rgba(14, 156, 116, 0.12), 0 4px 12px rgba(14, 156, 116, 0.2);
+  animation: journey-pulse 2.5s ease-in-out infinite;
+}
+
+@keyframes journey-pulse {
+  0%, 100% { box-shadow: 0 0 0 6px rgba(14,156,116,0.12), 0 4px 12px rgba(14,156,116,0.2); }
+  50% { box-shadow: 0 0 0 10px rgba(14,156,116,0.06), 0 4px 16px rgba(14,156,116,0.25); }
+}
+
+.journey-node-label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #0f172a;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.journey-node.future .journey-node-label {
+  color: #94a3b8;
+}
+
+.journey-node.active .journey-node-label {
+  color: #0E9C74;
+  font-weight: 800;
+}
+
+.journey-node-credits {
+  font-size: 0.7rem;
+  color: #94a3b8;
+  font-family: var(--mono);
+}
+
+.journey-progress-track {
+  height: 4px;
+  background: #e2e8f0;
+  border-radius: 2px;
+  margin: 0 40px 20px;
+  position: relative;
+}
+
+.journey-progress-fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  background: linear-gradient(90deg, #0E9C74, #22c55e);
+  border-radius: 2px;
+  transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.journey-status {
+  text-align: center;
+  margin-bottom: 12px;
+}
+
+.journey-current {
+  font-size: 0.9rem;
+  color: #64748b;
+}
+
+.journey-current strong {
+  color: #0f172a;
+  font-weight: 800;
+}
+
+.journey-insight {
+  text-align: center;
+  padding-top: 16px;
+  border-top: 1px solid #f1f5f9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.journey-insight p {
+  font-size: 0.88rem;
+  color: #64748b;
+  font-style: italic;
+  margin: 0;
+}
+
+/* Mobile: vertical journey */
+@media (max-width: 640px) {
+  .journey-map { padding: 24px 20px; }
+  .journey-nodes {
+    flex-direction: column;
+    gap: 20px;
+    align-items: flex-start;
+  }
+  .journey-node {
+    flex-direction: row;
+    gap: 14px;
+    flex: none;
+  }
+  .journey-node-label { text-align: left; }
+  .journey-progress-track {
+    display: none;
+  }
+}
+
+/* ══════════════════════════════════════════════════════
+   B. EARNING PATHWAYS
+   ══════════════════════════════════════════════════════ */
+
+.earning-pathways {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  margin-bottom: 12px;
+}
+
+@media (max-width: 900px) {
+  .earning-pathways { grid-template-columns: 1fr; }
+}
+
+.pathway-card {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 0;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+  transition: box-shadow 0.2s ease;
+}
+
+.pathway-card:hover {
+  box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+  transform: translateY(-2px);
+}
+
+.pathway-card.consume { border-left: 4px solid #0E9C74; }
+.pathway-card.diagnose { border-left: 4px solid #D9A441; }
+.pathway-card.advocate { border-left: 4px solid #6366f1; }
+
+.pathway-header {
+  padding: 18px 20px 12px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.pathway-header h4 {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0 0 2px;
+}
+
+.pathway-subtitle {
+  font-size: 0.72rem;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 600;
+}
+
+.pathway-actions {
+  padding: 12px 20px;
+}
+
+.pathway-action {
+  display: grid;
+  grid-template-columns: 24px 1fr auto auto;
+  gap: 8px;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #f8fafc;
+  font-size: 0.85rem;
+}
+
+.pathway-action:last-child { border-bottom: none; }
+
+.pathway-icon {
+  font-size: 1rem;
+  text-align: center;
+}
+
+.pathway-label {
+  color: #334155;
+  font-weight: 500;
+}
+
+.pathway-credits {
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #D9A441;
+  white-space: nowrap;
+}
+
+.pathway-status {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  font-family: var(--mono);
+  min-width: 48px;
+  text-align: right;
+}
+
+.pathway-action.done .pathway-label {
+  color: #0E9C74;
+}
+
+.pathway-action.done .pathway-status {
+  color: #0E9C74;
+  font-weight: 700;
+}
+
+.pathway-max {
+  padding: 10px 20px;
+  font-size: 0.75rem;
+  color: #94a3b8;
+  text-align: right;
+  font-family: var(--mono);
+  border-top: 1px solid #f1f5f9;
+  font-weight: 600;
+}
+
+/* ── Earning summary strip ── */
+
+.earning-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 20px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  margin-bottom: 28px;
+  font-size: 0.85rem;
+  color: #64748b;
+}
+
+.earned-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  background: #ecfdf5;
+  color: #047857;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  font-family: var(--mono);
+}
+
+/* ══════════════════════════════════════════════════════
+   C. TROPHY CASE / BADGE GRID
+   ══════════════════════════════════════════════════════ */
+
 .trophy-case {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
@@ -36,8 +352,12 @@
 }
 
 .trophy-item.locked {
-  opacity: 0.6;
-  filter: grayscale(100%);
+  opacity: 0.85;
+  background: linear-gradient(145deg, #f8fafc, #f1f5f9);
+}
+
+.trophy-item.locked .trophy-icon {
+  opacity: 0.5;
 }
 
 .trophy-icon {
@@ -63,7 +383,20 @@
   line-height: 1.4;
 }
 
-/* Special Master Badge Styling */
+/* Badge progress indicator */
+.trophy-progress {
+  margin-top: 10px;
+  padding: 4px 10px;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 8px;
+  font-size: 0.7rem;
+  color: #166534;
+  font-family: var(--mono);
+  font-weight: 600;
+}
+
+/* Master Badge */
 .trophy-item.master-badge {
   grid-column: 1 / -1;
   background: linear-gradient(135deg, #1e293b, #0f172a);
@@ -89,7 +422,132 @@
   color: #64748b;
 }
 
-/* Visual Level Map */
+/* ══════════════════════════════════════════════════════
+   D. VIP STORE — Tiered
+   ══════════════════════════════════════════════════════ */
+
+.vip-store {
+  display: grid;
+  gap: 12px;
+}
+
+.store-rung {
+  margin-bottom: 20px;
+}
+
+.store-rung:last-child { margin-bottom: 0; }
+
+.store-rung-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #64748b;
+  margin-bottom: 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid #f1f5f9;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.rung-gate {
+  font-size: 0.7rem;
+  color: #94a3b8;
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.store-rung.conversations {
+  padding-left: 12px;
+  border-left: 3px solid #D9A441;
+}
+
+.store-rung.discounts {
+  padding-left: 12px;
+  border-left: 3px solid #6366f1;
+}
+
+.store-card {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 16px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: all 0.2s ease;
+}
+
+.store-card:not(.locked):hover {
+  border-color: #D9A441;
+  box-shadow: 0 4px 12px rgba(217,164,65,0.15);
+}
+
+.store-card.locked {
+  background: #f8fafc;
+  opacity: 0.7;
+}
+
+.store-info h5 {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 4px;
+}
+
+.store-price {
+  font-family: var(--mono);
+  font-weight: 700;
+  color: #D9A441;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  white-space: nowrap;
+}
+
+/* ══════════════════════════════════════════════════════
+   E. ORG STATS STRIP
+   ══════════════════════════════════════════════════════ */
+
+.org-stats-strip {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.org-stat-pill {
+  flex: 1;
+  min-width: 80px;
+  text-align: center;
+  padding: 14px 12px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+}
+
+.org-stat-pill strong {
+  display: block;
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.org-stat-pill span {
+  font-size: 0.72rem;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  font-weight: 600;
+}
+
+/* ══════════════════════════════════════════════════════
+   F. LEVEL MAP (kept, improved)
+   ══════════════════════════════════════════════════════ */
+
 .level-map {
   background: #fff;
   border: 1px solid #e2e8f0;
@@ -129,47 +587,4 @@
   background: linear-gradient(90deg, #0E9C74, #22c55e);
   border-radius: 6px;
   transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* VIP Store */
-.vip-store {
-  display: grid;
-  gap: 16px;
-}
-
-.store-card {
-  background: #fff;
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
-  padding: 20px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  transition: all 0.2s ease;
-}
-
-.store-card:not(.locked):hover {
-  border-color: #D9A441;
-  box-shadow: 0 4px 12px rgba(217,164,65,0.15);
-}
-
-.store-card.locked {
-  background: #f8fafc;
-  opacity: 0.7;
-}
-
-.store-info h5 {
-  font-size: 1rem;
-  font-weight: 700;
-  color: #0f172a;
-  margin: 0 0 4px;
-}
-
-.store-price {
-  font-family: var(--mono);
-  font-weight: 700;
-  color: #D9A441;
-  display: flex;
-  align-items: center;
-  gap: 12px;
 }

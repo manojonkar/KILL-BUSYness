@@ -19,13 +19,13 @@ export async function finishRegistration(formData: FormData) {
   const adminEmail = String(formData.get("adminEmail") || "").trim().toLowerCase();
 
   if (!name) {
-    redirect("/dashboard?error=" + encodeURIComponent("Company name is required"));
+    return { error: "Company name is required." };
   }
 
   const { data: existing } = await supabase.from("companies").select("id").eq("admin_user_id", user!.id).maybeSingle();
   if (existing) {
     revalidatePath("/dashboard");
-    redirect("/dashboard");
+    return { success: true };
   }
 
   const { data, error } = await supabase
@@ -38,5 +38,5 @@ export async function finishRegistration(formData: FormData) {
   }
 
   revalidatePath("/dashboard");
-  redirect("/dashboard");
+  return { success: true };
 }

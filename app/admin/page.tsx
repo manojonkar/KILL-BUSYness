@@ -3,18 +3,19 @@ import Link from "next/link";
 import Header from "@/components/Header";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { updateOrderStatus } from "./actions";
+import GrantAccessClient from "./grant-access/GrantAccessClient";
 import { approveStory, removeStory } from "./stories/actions";
 import { computeDimensionScores, overallScore, answersArrayFromRows, type ParticipantAnswers } from "@/lib/scoring";
 import { scoreColor } from "@/lib/suggestions";
 
 export const dynamic = "force-dynamic";
 
-type Tab = "orders" | "companies" | "surveys" | "users" | "stories" | "reports" | "contact";
+type Tab = "orders" | "companies" | "surveys" | "users" | "stories" | "reports" | "contact" | "grant-access";
 
 export default async function AdminDashboardPage({
   searchParams
 }: {
-  searchParams: { tab?: string };
+  searchParams: { tab?: string; status?: string };
 }) {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -120,10 +121,21 @@ export default async function AdminDashboardPage({
   });
 
   // Compute summary stats
-  const totalSalesCount = allOrders.length;
-  const paidOrders = allOrders.filter(o => o.status === "paid" || o.status === "dispatched");
-  const totalPaidRevenue = paidOrders.reduce((acc, o) => acc + o.amount, 0);
-  const totalBookVolume = allOrders.reduce((acc, o) => {
+  const activeOrders = allOrders.filter(o => o.status !== "cancelled");
+  const totalSalesCount = activeOrders.length;
+  const paidOrders = activeOrders.filter(o => o.status === "paid" || o.status === "dispatched");
+  
+  let totalPaidRevenueINR = 0;
+  let totalPaidRevenueUSD = 0;
+  paidOrders.forEach(o => {
+    if (o.unit_price < 100) {
+      totalPaidRevenueUSD += o.amount;
+    } else {
+      totalPaidRevenueINR += o.amount;
+    }
+  });
+
+  const totalBookVolume = activeOrders.reduce((acc, o) => {
     const match = o.notes?.match(/Quantity:\s*(\d+)/i);
     const qty = match ? parseInt(match[1], 10) : 1;
     return acc + qty;
@@ -155,8 +167,8 @@ export default async function AdminDashboardPage({
         >
           <div className="card mini-card" style={{ padding: "20px 24px" }}>
             <span className="eyebrow" style={{ color: "var(--ink-soft)" }}>Paid Revenue</span>
-            <h3 style={{ fontSize: "1.8rem", margin: "6px 0 2px", color: "var(--teal-ink, #0f766e)" }}>
-              ₹{totalPaidRevenue.toLocaleString("en-IN")}
+            <h3 style={{ fontSize: "1.4rem", margin: "6px 0 2px", color: "var(--teal-ink, #0f766e)" }}>
+              ₹{totalPaidRevenueINR.toLocaleString("en-IN")} <span style={{ fontSize: "1rem", color: "var(--ink-soft)" }}>| ${totalPaidRevenueUSD}</span>
             </h3>
             <p style={{ fontSize: "0.78rem", color: "var(--ink-faint)" }}>From {paidOrders.length} paid orders</p>
           </div>
@@ -272,7 +284,7 @@ export default async function AdminDashboardPage({
           >
             📈 Audit Reports
           </Link>
-          <Link
+          <Link 
             href="/admin?tab=contact"
             style={{
               padding: "10px 18px 8px",
@@ -286,106 +298,167 @@ export default async function AdminDashboardPage({
           >
             ✉️ Contact ({allContactMessages.length})
           </Link>
+          <Link 
+            href="/admin?tab=grant-access"
+            style={{
+              padding: "10px 18px 8px",
+              textDecoration: "none",
+              fontWeight: 600,
+              fontSize: "0.92rem",
+              color: currentTab === "grant-access" ? "var(--teal-ink, #0f766e)" : "var(--ink-soft)",
+              borderBottom: currentTab === "grant-access" ? "3px solid var(--teal)" : "3px solid transparent",
+              transition: "all 0.15s ease"
+            }}
+          >
+            🗝️ Grant Access
+          </Link>
         </div>
 
         {/* Active Tab View */}
         <div className="card" style={{ padding: 24, overflowX: "auto" }}>
           
           {/* TAB: Book Orders */}
-          {currentTab === "orders" && (
-            <div>
-              <h3 style={{ marginBottom: 16 }}>Orders Record</h3>
-              {allOrders.length === 0 ? (
-                <p style={{ color: "var(--ink-faint)", fontSize: "0.9rem" }}>No orders placed yet.</p>
-              ) : (
-                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.85rem", textAlign: "left" }}>
-                  <thead>
-                    <tr style={{ borderBottom: "2px solid var(--line)", background: "#f8fafc" }}>
-                      <th style={{ padding: 12 }}>Ref</th>
-                      <th style={{ padding: 12 }}>Date</th>
-                      <th style={{ padding: 12 }}>Customer</th>
-                      <th style={{ padding: 12 }}>Format</th>
-                      <th style={{ padding: 12 }}>Order Amount</th>
-                      <th style={{ padding: 12 }}>Quantity / Notes</th>
-                      <th style={{ padding: 12, textAlign: "center" }}>Status Update</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {allOrders.map((o) => {
-                      const date = new Date(o.created_at).toLocaleDateString("en-IN", {
-                        day: "2-digit",
-                        month: "short",
-                        year: "numeric"
-                      });
-                      
-                      const match = o.notes?.match(/Quantity:\s*(\d+)/i);
-                      const qty = match ? match[1] : "1";
-                      const cleanNotes = o.notes?.replace(/Quantity:\s*\d+/i, "").replace(/^,\s*/, "") || "—";
+          {currentTab === "orders" && (() => {
+            const currentStatus = searchParams.status || "all";
+            
+            const grantedOrders = allOrders.filter(o => o.notes?.includes("Manually granted"));
+            const regularOrders = allOrders.filter(o => !o.notes?.includes("Manually granted"));
 
-                      return (
-                        <tr key={o.id} style={{ borderBottom: "1px solid var(--line)" }}>
-                          <td style={{ padding: 12, fontFamily: "monospace", fontWeight: 700, fontSize: "0.9rem" }}>
-                            {o.ref}
-                          </td>
-                          <td style={{ padding: 12, color: "var(--ink-soft)" }}>{date}</td>
-                          <td style={{ padding: 12 }}>
-                            <strong>{o.name}</strong>
-                            {o.company && <div style={{ fontSize: "0.78rem", color: "var(--ink-soft)" }}>{o.company}</div>}
-                            <div style={{ fontSize: "0.76rem", color: "var(--ink-faint)" }}>{o.email} · {o.phone}</div>
-                            {o.address && (
-                              <div style={{ fontSize: "0.74rem", color: "var(--ink-soft)", marginTop: 4, fontStyle: "italic", whiteSpace: "pre-line", maxWidth: 220 }}>
-                                {o.address}, {o.city}{o.state ? `, ${o.state}` : ""} {o.pincode}
-                              </div>
-                            )}
-                          </td>
-                          <td style={{ padding: 12, textTransform: "capitalize" }}>{o.format}</td>
-                          <td style={{ padding: 12, fontWeight: 700 }}>₹{o.amount.toLocaleString("en-IN")}</td>
-                          <td style={{ padding: 12 }}>
-                            <span style={{ fontWeight: 600, color: "#1e293b" }}>Qty: {qty}</span>
-                            <div style={{ fontSize: "0.76rem", color: "var(--ink-soft)", marginTop: 2 }}>{cleanNotes}</div>
-                          </td>
-                          <td style={{ padding: 12, textAlign: "center" }}>
-                            <form action={updateOrderStatus} style={{ display: "flex", gap: 6, justifyContent: "center", alignItems: "center" }}>
-                              <input type="hidden" name="orderId" value={o.id} />
-                              <select 
-                                name="status" 
-                                defaultValue={o.status}
-                                style={{ 
-                                  fontSize: "0.8rem", 
-                                  padding: "4px 8px", 
-                                  borderRadius: 6, 
-                                  border: "1px solid var(--line)",
-                                  backgroundColor: o.status === "paid" ? "#ccfbf1" : o.status === "dispatched" ? "#dbeafe" : o.status === "cancelled" ? "#fee2e2" : "#fef3c7",
-                                  color: o.status === "paid" ? "#0f766e" : o.status === "dispatched" ? "#1d4ed8" : o.status === "cancelled" ? "#991b1b" : "#d97706",
-                                  fontWeight: 700
-                                }}
-                              >
-                                <option value="awaiting_payment">Awaiting Payment</option>
-                                <option value="paid">Paid</option>
-                                <option value="dispatched">Dispatched</option>
-                                <option value="cancelled">Cancelled</option>
-                              </select>
-                              <button 
-                                type="submit" 
-                                className="btn btn-dark btn-sm" 
-                                style={{ 
-                                  padding: "5px 10px", 
-                                  fontSize: "0.74rem", 
-                                  borderRadius: 6 
-                                }}
-                              >
-                                Save
-                              </button>
-                            </form>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              )}
-            </div>
-          )}
+            let displayedOrders = [];
+            if (currentStatus === "granted") {
+              displayedOrders = grantedOrders;
+            } else if (currentStatus === "all") {
+              displayedOrders = regularOrders;
+            } else {
+              displayedOrders = regularOrders.filter(o => o.status === currentStatus);
+            }
+            
+            const countAwaiting = regularOrders.filter(o => o.status === "awaiting_payment").length;
+            const countPaid = regularOrders.filter(o => o.status === "paid").length;
+            const countDispatched = regularOrders.filter(o => o.status === "dispatched").length;
+            const countCancelled = regularOrders.filter(o => o.status === "cancelled").length;
+
+            const renderTable = (ordersToRender: any[]) => (
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.85rem", textAlign: "left", marginTop: 12 }}>
+                <thead>
+                  <tr style={{ borderBottom: "2px solid var(--line)", background: "#f8fafc" }}>
+                    <th style={{ padding: 12 }}>Ref</th>
+                    <th style={{ padding: 12 }}>Date</th>
+                    <th style={{ padding: 12 }}>Customer</th>
+                    <th style={{ padding: 12 }}>Format</th>
+                    <th style={{ padding: 12 }}>Order Amount</th>
+                    <th style={{ padding: 12 }}>Quantity / Notes</th>
+                    <th style={{ padding: 12, textAlign: "center" }}>Status Update</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {ordersToRender.map((o) => {
+                    const date = new Date(o.created_at).toLocaleDateString("en-IN", {
+                      day: "2-digit",
+                      month: "short",
+                      year: "numeric"
+                    });
+                    
+                    const match = o.notes?.match(/Quantity:\s*(\d+)/i);
+                    const qty = match ? match[1] : "1";
+                    const cleanNotes = o.notes?.replace(/Quantity:\s*\d+/i, "").replace(/^,\s*/, "") || "—";
+
+                    return (
+                      <tr key={o.id} style={{ borderBottom: "1px solid var(--line)" }}>
+                        <td style={{ padding: 12, fontFamily: "monospace", fontWeight: 700, fontSize: "0.9rem" }}>
+                          {o.ref}
+                        </td>
+                        <td style={{ padding: 12, color: "var(--ink-soft)" }}>{date}</td>
+                        <td style={{ padding: 12 }}>
+                          <strong>{o.name}</strong>
+                          {o.company && <div style={{ fontSize: "0.78rem", color: "var(--ink-soft)" }}>{o.company}</div>}
+                          <div style={{ fontSize: "0.76rem", color: "var(--ink-faint)" }}>{o.email} · {o.phone}</div>
+                          {o.address && (
+                            <div style={{ fontSize: "0.74rem", color: "var(--ink-soft)", marginTop: 4, fontStyle: "italic", whiteSpace: "pre-line", maxWidth: 220 }}>
+                              {o.address}, {o.city}{o.state ? `, ${o.state}` : ""} {o.pincode}
+                            </div>
+                          )}
+                        </td>
+                        <td style={{ padding: 12, textTransform: "capitalize" }}>{o.format}</td>
+                        <td style={{ padding: 12, fontWeight: 700 }}>
+                          {o.unit_price < 100 ? "$" : "₹"}{o.amount.toLocaleString("en-IN")}
+                        </td>
+                        <td style={{ padding: 12 }}>
+                          <span style={{ fontWeight: 600, color: "#1e293b" }}>Qty: {qty}</span>
+                          <div style={{ fontSize: "0.76rem", color: "var(--ink-soft)", marginTop: 2 }}>{cleanNotes}</div>
+                        </td>
+                        <td style={{ padding: 12, textAlign: "center" }}>
+                          <form action={updateOrderStatus} style={{ display: "flex", gap: 6, justifyContent: "center", alignItems: "center" }}>
+                            <input type="hidden" name="orderId" value={o.id} />
+                            <select 
+                              name="status" 
+                              defaultValue={o.status}
+                              style={{ 
+                                fontSize: "0.8rem", 
+                                padding: "4px 8px", 
+                                borderRadius: 6, 
+                                border: "1px solid var(--line)",
+                                backgroundColor: o.status === "paid" ? "#ccfbf1" : o.status === "dispatched" ? "#dbeafe" : o.status === "cancelled" ? "#fee2e2" : "#fef3c7",
+                                color: o.status === "paid" ? "#0f766e" : o.status === "dispatched" ? "#1d4ed8" : o.status === "cancelled" ? "#991b1b" : "#d97706",
+                                fontWeight: 700
+                              }}
+                            >
+                              <option value="awaiting_payment">Awaiting Payment</option>
+                              <option value="paid">Paid</option>
+                              <option value="dispatched">Dispatched</option>
+                              <option value="cancelled">Cancelled</option>
+                            </select>
+                            <button 
+                              type="submit" 
+                              className="btn btn-dark btn-sm" 
+                              style={{ 
+                                padding: "5px 10px", 
+                                fontSize: "0.74rem", 
+                                borderRadius: 6 
+                              }}
+                            >
+                              Save
+                            </button>
+                          </form>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            );
+
+            return (
+              <div>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, flexWrap: "wrap", gap: 12 }}>
+                  <h3 style={{ margin: 0 }}>Orders Record</h3>
+                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                    <Link href="/admin?tab=orders&status=all" className={`btn btn-sm ${currentStatus === "all" ? "btn-dark" : "btn-outline"}`} style={{ borderRadius: 20 }}>
+                      All ({regularOrders.length})
+                    </Link>
+                    <Link href="/admin?tab=orders&status=awaiting_payment" className={`btn btn-sm ${currentStatus === "awaiting_payment" ? "btn-dark" : "btn-outline"}`} style={{ borderRadius: 20 }}>
+                      Awaiting Payment ({countAwaiting})
+                    </Link>
+                    <Link href="/admin?tab=orders&status=paid" className={`btn btn-sm ${currentStatus === "paid" ? "btn-dark" : "btn-outline"}`} style={{ borderRadius: 20 }}>
+                      Paid ({countPaid})
+                    </Link>
+                    <Link href="/admin?tab=orders&status=dispatched" className={`btn btn-sm ${currentStatus === "dispatched" ? "btn-dark" : "btn-outline"}`} style={{ borderRadius: 20 }}>
+                      Dispatched ({countDispatched})
+                    </Link>
+                    <Link href="/admin?tab=orders&status=cancelled" className={`btn btn-sm ${currentStatus === "cancelled" ? "btn-dark" : "btn-outline"}`} style={{ borderRadius: 20 }}>
+                      Cancelled ({countCancelled})
+                    </Link>
+                    <Link href="/admin?tab=orders&status=granted" className={`btn btn-sm ${currentStatus === "granted" ? "btn-dark" : "btn-outline"}`} style={{ borderRadius: 20, borderColor: "var(--teal-ink)", color: currentStatus === "granted" ? "#fff" : "var(--teal-ink)", backgroundColor: currentStatus === "granted" ? "var(--teal-ink)" : "transparent" }}>
+                      Granted Access ({grantedOrders.length})
+                    </Link>
+                  </div>
+                </div>
+                {displayedOrders.length === 0 ? (
+                  <p style={{ color: "var(--ink-faint)", fontSize: "0.9rem", marginTop: 24 }}>No orders found in this category.</p>
+                ) : renderTable(displayedOrders)}
+              </div>
+            );
+          })()}
 
           {/* TAB: Registered Companies */}
           {currentTab === "companies" && (
@@ -823,7 +896,7 @@ export default async function AdminDashboardPage({
                             </div>
                           </div>
                           {/* Body */}
-                          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 0 }}>
+                          <div className="mobile-stack" style={{ gap: 0 }}>
                             <div style={{ padding: "18px 24px", borderRight: "1px solid var(--line)" }}>
                               <div style={{ fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--ink-faint)", marginBottom: 12 }}>Scores by Dimension</div>
                               {Object.entries(dimScores).map(([key, s]) => (
@@ -921,6 +994,17 @@ export default async function AdminDashboardPage({
                   })}
                 </div>
               )}
+            </div>
+          )}
+
+          {/* TAB: Grant Access */}
+          {currentTab === "grant-access" && (
+            <div>
+              <h3 style={{ marginBottom: 16 }}>Manually Grant Access</h3>
+              <p style={{ color: "var(--ink-soft)", fontSize: "0.9rem", marginBottom: 24 }}>
+                Give users access to digital products. The system automatically deduplicates existing users.
+              </p>
+              <GrantAccessClient />
             </div>
           )}
 

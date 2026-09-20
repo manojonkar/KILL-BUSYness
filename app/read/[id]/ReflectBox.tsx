@@ -37,7 +37,7 @@ export default function ReflectBox({
       <form
         action={async (fd) => {
           await action(fd);
-          setStatus("Saved · thank you");
+          setStatus("Saved - thank you");
           setTimeout(() => setStatus(""), 2500);
         }}
       >

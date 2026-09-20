@@ -1,10 +1,48 @@
+"use client";
+import { useState } from "react";
 import { submitStory } from "./actions";
 
 export default function StoryForm({ loggedIn }: { loggedIn: boolean }) {
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+
+    const formData = new FormData(e.currentTarget);
+    try {
+      const res = await submitStory(formData);
+      if (res && "error" in res && res.error) {
+        setError(res.error);
+      } else if (res && "success" in res) {
+        setSuccess(true);
+      }
+    } catch (err: any) {
+      setError("An unexpected error occurred.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  if (success) {
+    return (
+      <div className="card" style={{ padding: 40, textAlign: "center", marginBottom: 20, maxWidth: 720 }}>
+        <h3 style={{ marginBottom: 12, color: "#0f766e" }}>Story Submitted!</h3>
+        <p style={{ color: "var(--ink-soft)" }}>
+          Thank you for sharing your experience. We will review it shortly. You've earned 25 MI Credits!
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="card" style={{ padding: 28, marginBottom: 20, maxWidth: 720 }}>
+      {error && <p style={{ color: "#9B2226", fontSize: ".9rem", marginBottom: 16, fontWeight: 500 }}>{error}</p>}
       <div className="form-grid">
-        <form action={submitStory} style={{ display: "contents" }}>
+        <form onSubmit={handleSubmit} style={{ display: "contents" }}>
           <div className="field">
             <label>Your Name</label>
             <input name="name" placeholder="Full name" required />
@@ -32,8 +70,8 @@ export default function StoryForm({ loggedIn }: { loggedIn: boolean }) {
             <input type="checkbox" name="consent" style={{ width: "auto" }} /> I agree my name, role and story may be shared publicly on the KILL BUSYness portal.
           </label>
           {loggedIn ? (
-            <button className="btn btn-primary" style={{ marginTop: 16, gridColumn: "1/-1" }} type="submit">
-              Share My Story (+25 MI Credits)
+            <button className="btn btn-primary" style={{ marginTop: 16, gridColumn: "1/-1" }} type="submit" disabled={loading}>
+              {loading ? "Submitting..." : "Share My Story (+25 MI Credits)"}
             </button>
           ) : (
             <p style={{ gridColumn: "1/-1", marginTop: 16, fontSize: ".85rem" }}>

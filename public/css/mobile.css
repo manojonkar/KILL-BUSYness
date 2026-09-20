@@ -1,0 +1,42 @@
+/* General mobile fixes */
+
+@media screen and (max-width: 768px) {
+    table {
+        display: block !important;
+        overflow-x: auto !important;
+        white-space: nowrap !important;
+        width: 100% !important;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    /* Ensure elements inside don't force page width */
+    html, body {
+        max-width: 100vw;
+        overflow-x: hidden;
+    }
+
+    .invite-row {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 12px !important;
+    }
+    
+    .invite-row input, 
+    .invite-row select, 
+    .invite-row button {
+        width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    .mobile-stack {
+        display: flex !important;
+        flex-direction: column !important;
+    }
+}
+
+@media screen and (min-width: 769px) {
+    .mobile-stack {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+    }
+}

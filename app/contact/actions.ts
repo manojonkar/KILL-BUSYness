@@ -9,7 +9,7 @@ export async function sendContactMessage(formData: FormData) {
   const message = String(formData.get("message") || "").trim();
 
   if (!name || !email || !message) {
-    redirect("/contact?error=" + encodeURIComponent("Please fill in every field."));
+    return { error: "Please fill in every field." };
   }
 
   // 1. Save to database
@@ -47,5 +47,5 @@ export async function sendContactMessage(formData: FormData) {
     } catch {
     }
   }
-  redirect("/contact?sent=1");
+  return { success: true };
 }

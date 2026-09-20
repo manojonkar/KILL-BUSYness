@@ -17,14 +17,14 @@ export interface Badge {
 }
 
 export const BADGES: Badge[] = [
-  { id: "b1", ic: "🪞", name: "Executive Awareness", desc: "Save your first reflection" },
-  { id: "b2", ic: "🧠", name: "Visionary Thinker", desc: "Save a reflection on all 11 chapters" },
-  { id: "b3", ic: "🔁", name: "ROAR Practitioner", desc: "Read from all 4 ROAR phases" },
-  { id: "b8", ic: "🎓", name: "Knowledge Foundation", desc: "Read all 11 chapters" },
-  { id: "b4", ic: "🏗️", name: "Diagnostic Initiated", desc: "Register your organization" },
-  { id: "b6", ic: "👥", name: "Organizational Alignment", desc: "Invite 10 or more participants" },
-  { id: "b7", ic: "🚀", name: "Performance Catalyst", desc: "Improve your BUSYness Index by 15+ on a re-run" },
-  { id: "b9", ic: "📣", name: "Industry Champion", desc: "3 referrals sign up and start reading" },
+  { id: "b1", ic: "🪞", name: "First Reflection", desc: "Save your first reflection" },
+  { id: "b2", ic: "🧠", name: "Deep Thinker", desc: "Save a reflection on all 11 chapters" },
+  { id: "b3", ic: "🔁", name: "ROAR Complete", desc: "Read from all 4 ROAR phases" },
+  { id: "b8", ic: "🎓", name: "Full Book", desc: "Read all 11 chapters" },
+  { id: "b4", ic: "🏗️", name: "Audit Architect", desc: "Register your organization" },
+  { id: "b6", ic: "👥", name: "Team Builder", desc: "Invite 10 or more participants" },
+  { id: "b7", ic: "🚀", name: "Transformer", desc: "Improve your BUSYness Index by 15+ on a re-run" },
+  { id: "b9", ic: "📣", name: "Ambassador", desc: "3 referrals sign up and start reading" },
   { id: "b10", ic: "⚡", name: "Certified High-Performance Leader", desc: "" }
 ];
 
@@ -84,7 +84,7 @@ export async function touchStreak(supabase: SupabaseClient) {
 }
 
 export async function markChapterRead(supabase: SupabaseClient, chapterId: number) {
-  await supabase.rpc("mark_chapter_read", { p_chapter_id: chapterId });
+  const { error } = await supabase.rpc("mark_chapter_read", { p_chapter_id: chapterId }); if (error) console.error("markChapterRead error:", error);
 }
 
 export async function getChapterReads(supabase: SupabaseClient, userId: string): Promise<Set<number>> {
@@ -104,16 +104,37 @@ export async function getReflection(supabase: SupabaseClient, userId: string, ch
 
 export async function isChapterUnlocked(supabase: SupabaseClient, userId: string, chapterId: number) {
   const { data } = await supabase
-    .from("user_unlocked_chapters")
-    .select("unlocked_at")
+    .from("redemptions")
+    .select("id")
     .eq("user_id", userId)
-    .eq("chapter_id", chapterId)
+    .eq("item", `Chapter ${chapterId} Unlock`)
     .maybeSingle();
   return !!data;
 }
 
-export async function unlockChapter(supabase: SupabaseClient, chapterId: number) {
-  await supabase.rpc("unlock_chapter", { p_chapter_id: chapterId });
+export async function hasRedeemedAudioChapter(supabase: SupabaseClient, userId: string, chapterId: number) {
+  const chNum = chapterId === 0 ? "INTRO" : chapterId.toString().padStart(2, "0");
+  const { data } = await supabase
+    .from("redemptions")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("item", `Audio Chapter ${chNum}`)
+    .maybeSingle();
+  return !!data;
+}
+
+export async function hasRedeemedFullAudioBook(supabase: SupabaseClient, userId: string) {
+  const { data } = await supabase
+    .from("redemptions")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("item", "Full AudioBook")
+    .maybeSingle();
+  return !!data;
+}
+
+export async function unlockChapter(supabase: SupabaseClient, userId: string, chapterId: number) {
+  await supabase.from("redemptions").insert({ user_id: userId, item: `Chapter ${chapterId} Unlock`, cost: 0 });
 }
 
 export async function saveReflection(supabase: SupabaseClient, chapterId: number, body: string) {
@@ -179,3 +200,121 @@ export async function getOrgStats(supabase: SupabaseClient, userId: string): Pro
   return { invited: rows.length, completed, rate: rows.length ? Math.round((100 * completed) / rows.length) : 0 };
 }
 
+
+export async function getQuizScore(supabase: SupabaseClient, userId: string, chapterId: number): Promise<number> {
+  const { data } = await supabase
+    .from("user_reflections")
+    .select("body")
+    .eq("user_id", userId)
+    .eq("chapter_id", 1000 + chapterId)
+    .single();
+  
+  if (data && data.body) {
+    return parseInt(data.body, 10) || 0;
+  }
+  return 0;
+}
+
+export async function submitQuizScore(supabase: SupabaseClient, userId: string, chapterId: number, newScore: number): Promise<{ creditsEarned: number, totalScore: number }> {
+  // Max score they had previously
+  const maxScore = await getQuizScore(supabase, userId, chapterId);
+  
+  if (newScore > maxScore) {
+    const delta = newScore - maxScore;
+    
+    // update max score in user_reflections
+    await supabase.from("user_reflections").upsert({
+      user_id: userId,
+      chapter_id: 1000 + chapterId,
+      body: newScore.toString()
+    });
+    
+    // add delta to wallet and xp
+    const { data: prog } = await supabase
+      .from("user_progress")
+      .select("xp, wallet")
+      .eq("user_id", userId)
+      .single();
+      
+    if (prog) {
+      await supabase.from("user_progress").update({
+        xp: prog.xp + delta,
+        wallet: prog.wallet + delta
+      }).eq("user_id", userId);
+    }
+    
+    return { creditsEarned: delta, totalScore: newScore };
+  }
+  
+  return { creditsEarned: 0, totalScore: maxScore };
+}
+
+/* ── Earning-progress snapshot for the Rewards page pathway cards ── */
+
+export interface EarningProgress {
+  chaptersRead: number;
+  totalChapters: number;
+  reflectionsSaved: number;
+  allChaptersComplete: boolean;
+  streakDays: number;
+  hasStreak7: boolean;
+  orgRegistered: boolean;
+  surveyCompleted: boolean;
+  participantsInvited: number;
+  reportGenerated: boolean;
+  storiesSubmitted: number;
+  storiesApproved: number;
+  referralSignups: number;
+}
+
+export async function getEarningProgress(supabase: SupabaseClient, userId: string): Promise<EarningProgress> {
+  const [
+    { data: reads },
+    { data: reflections },
+    { data: company },
+    { data: stories },
+    { data: progress },
+    { data: referrals }
+  ] = await Promise.all([
+    supabase.from("user_chapter_reads").select("chapter_id").eq("user_id", userId),
+    supabase.from("user_reflections").select("chapter_id").eq("user_id", userId).lt("chapter_id", 1000),
+    supabase.from("companies").select("id").eq("admin_user_id", userId).maybeSingle(),
+    supabase.from("stories").select("id, status").eq("user_id", userId),
+    supabase.from("user_progress").select("streak").eq("user_id", userId).maybeSingle(),
+    supabase.from("referrals").select("id").eq("referrer_id", userId)
+  ]);
+
+  const readCount = (reads || []).length;
+  const reflCount = (reflections || []).filter((r: { chapter_id: number }) => r.chapter_id < 1000).length;
+  const totalChapters = CHAPTERS.length;
+
+  let participantsInvited = 0;
+  let surveyCompleted = false;
+  let reportGenerated = false;
+  if (company?.id) {
+    const { data: participants } = await supabase.from("participants").select("status").eq("company_id", company.id);
+    const rows = participants || [];
+    participantsInvited = rows.length;
+    const completedCount = rows.filter((r: { status: string }) => r.status === "completed").length;
+    surveyCompleted = completedCount > 0;
+    reportGenerated = completedCount >= 5;
+  }
+
+  const allStories = stories || [];
+
+  return {
+    chaptersRead: readCount,
+    totalChapters,
+    reflectionsSaved: reflCount,
+    allChaptersComplete: readCount >= totalChapters,
+    streakDays: progress?.streak || 0,
+    hasStreak7: (progress?.streak || 0) >= 7,
+    orgRegistered: !!company,
+    surveyCompleted,
+    participantsInvited,
+    reportGenerated,
+    storiesSubmitted: allStories.length,
+    storiesApproved: allStories.filter((s: { status: string }) => s.status === "approved").length,
+    referralSignups: (referrals || []).length
+  };
+}

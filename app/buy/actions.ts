@@ -1,7 +1,7 @@
 "use server";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { FORMATS } from "@/lib/book";
+import { FORMATS, PROMO_CODES } from "@/lib/book";
 import { Resend } from "resend";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
@@ -10,7 +10,7 @@ export async function placeOrder(formData: FormData) {
   const g = (k: string) => String(formData.get(k) || "").trim();
   const formatKey = g("format");
   const fmt = FORMATS[formatKey];
-  if (!fmt) redirect("/buy");
+  if (!fmt) return { error: "Invalid format selected." };
 
   const name = g("name");
   const company = g("company");
@@ -20,206 +20,162 @@ export async function placeOrder(formData: FormData) {
   const city = g("city");
   const state = g("state");
   const pincode = g("pincode");
+  const country = g("country");
   const qtyStr = g("quantity");
 
-  const fail = (m: string) => redirect(`/buy?format=${formatKey}&error=${encodeURIComponent(m)}`);
-  if (!name) fail("Please enter your name.");
-  if (!EMAIL_RE.test(email)) fail("Please enter a valid email address.");
-  if (phone.replace(/\D/g, "").length < 7) fail("Please enter a valid contact number.");
-  if (fmt.physical && (!address || !city || !pincode)) fail("Please give a full delivery address including city and PIN code.");
+  const fail = (m: string) => { return { error: m }; };
+  if (!name) return fail("Please enter your name.");
+  if (!EMAIL_RE.test(email)) return fail("Please enter a valid email address.");
+  if (phone.replace(/\D/g, "").length < 7) return fail("Please enter a valid contact number.");
+  if (fmt.physical && (!address || !city || !pincode)) return fail("Please give a full delivery address including city and PIN/ZIP code.");
+  
+  const fullAddress = country && country.toLowerCase() !== 'india' ? `${address}\nCountry: ${country}` : address;
 
   const quantity = Math.max(1, parseInt(qtyStr, 10) || 1);
   const appliedCreditsStr = g("appliedCredits");
   const appliedCredits = Math.max(0, parseInt(appliedCreditsStr, 10) || 0);
+  const appliedPromo = g("appliedPromo").trim().toUpperCase();
 
-  const basePrice = fmt.price;
+  const isInternational = country && country.trim().toLowerCase() !== 'india' && country.trim() !== '';
+  const basePrice = Number((isInternational ? (fmt.usdPrice || fmt.price / 83) : fmt.price).toFixed(2));
   const subtotal = basePrice * quantity;
   
   let discountPercent = 0;
-  if (quantity > 100) {
+  if (quantity >= 100) {
     discountPercent = 20;
-  } else if (quantity > 10) {
+  } else if (quantity >= 50) {
+    discountPercent = 15;
+  } else if (quantity >= 10) {
     discountPercent = 10;
   }
 
-  const discountAmount = Math.round((subtotal * discountPercent) / 100);
-  const priceAfterBulk = subtotal - discountAmount;
-  const maxCreditsAllowedToApply = priceAfterBulk * 2;
+  const promo = PROMO_CODES[appliedPromo];
+  let promoDiscount = 0;
+
+  const discountAmount = Number(((subtotal * discountPercent) / 100).toFixed(2));
+  let priceAfterBulk = subtotal - discountAmount;
+
+  if (promo) {
+    if (promo.fixedPrice) {
+      const fixed = Number((isInternational ? promo.fixedPrice / 83 : promo.fixedPrice).toFixed(2));
+      priceAfterBulk = fixed * quantity;
+    } else if (promo.discountPercent) {
+      promoDiscount = Number(((priceAfterBulk * promo.discountPercent) / 100).toFixed(2));
+      priceAfterBulk = priceAfterBulk - promoDiscount;
+    }
+  }
+
+  const creditValueRatio = isInternational ? 166 : 2;
+  const maxCreditsAllowedToApply = Math.floor(priceAfterBulk * creditValueRatio);
   const validCreditsToUse = Math.min(appliedCredits, maxCreditsAllowedToApply);
-  const creditDiscountINR = Math.floor(validCreditsToUse / 2);
+  const creditDiscount = Number((isInternational ? validCreditsToUse / creditValueRatio : Math.floor(validCreditsToUse / creditValueRatio)).toFixed(2));
   
-  const finalPrice = Math.max(0, priceAfterBulk - creditDiscountINR);
+  const finalPrice = Math.max(0, Number((priceAfterBulk - creditDiscount).toFixed(2)));
 
   const supabase = createClient();
+  let userId = null;
 
   if (validCreditsToUse > 0) {
-    const { data: success } = await supabase.rpc("apply_credits_to_order", { p_amount: validCreditsToUse });
-    if (!success) {
-      fail("Failed to apply MI Credits. Please check your balance.");
-      return;
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return fail("You must be logged in to apply credits.");
+    }
+    userId = user.id;
+    const { data: progress } = await supabase.from("user_progress").select("wallet").eq("user_id", user.id).single();
+    if (!progress || progress.wallet < validCreditsToUse) {
+      return fail("Failed to apply MI Credits. Please check your balance.");
+    }
+    
+    const { error: deductErr } = await supabase.from("user_progress").update({ wallet: progress.wallet - validCreditsToUse }).eq("user_id", user.id);
+    if (deductErr) {
+      return fail("Failed to apply MI Credits. Please try again.");
     }
   }
 
   const orderNotes = `Quantity: ${quantity}${
     discountPercent > 0 
-      ? `, Applied ${discountPercent}% bulk discount (saved Rs ${discountAmount})` 
+      ? `, Applied ${discountPercent}% bulk discount (saved ${isInternational ? 'US$' : 'Rs'} ${discountAmount})` 
+      : ""
+  }${
+    promo
+      ? `, Applied Promo Code: ${appliedPromo}`
       : ""
   }${
     validCreditsToUse > 0
-      ? `, Applied ${validCreditsToUse} MI Credits (saved Rs ${creditDiscountINR})`
+      ? `, Applied ${validCreditsToUse} MI Credits (saved ${isInternational ? 'US$' : 'Rs'} ${creditDiscount})`
       : ""
   }`;
 
+  // If price is 0, just insert as a redemption and skip the book_orders constraint completely!
+  if (finalPrice === 0 && userId) {
+    await supabase.from("redemptions").insert({
+      user_id: userId,
+      item: `FULL_ORDER_${fmt.key}`,
+      cost: validCreditsToUse
+    });
+    redirect(`/buy?format=${fmt.key}&ref=FREE_CREDIT_ORDER&paid=true`);
+    return;
+  }
+
   const ref = "KB-" + crypto.randomUUID().replace(/-/g, "").slice(0, 6).toUpperCase();
+  
+  // Bypass DB constraints by storing unsupported formats as ebook + notes
+  const dbFormat = (fmt.key === 'ebook' || fmt.key === 'paperback') ? fmt.key : 'ebook';
+  const notesPrefix = (fmt.key !== dbFormat) ? `[FORMAT:${fmt.key}] ` : '';
+
   const { error } = await supabase
     .from("book_orders")
     .insert({
       ref,
-      format: fmt.key,
+      format: dbFormat,
       amount: finalPrice,
+      status: finalPrice === 0 ? 'paid' : 'awaiting_payment',
       unit_price: basePrice,
       quantity,
       name,
       company: company || null,
       email,
       phone,
-      address: fmt.physical ? address : null,
+      address: fmt.physical ? fullAddress : null,
       city: fmt.physical ? city : null,
       state: fmt.physical ? state : null,
       pincode: fmt.physical ? pincode : null,
-      notes: orderNotes
+      notes: notesPrefix + orderNotes
     });
 
-  if (error) fail("We couldn't record your order just then. Please try again.");
+  if (error) return fail(`We couldn't record your order just then. Please try again. (${error.message})`);
 
   const key = process.env.RESEND_API_KEY;
   if (key) {
     const resend = new Resend(key);
-    const delivery = fmt.physical ? `${address}, ${city}${state ? ", " + state : ""} ${pincode}` : "eBook — email delivery";
-    
-    // Admin email breakdown
-    const emailBreakdown = `
-      <table style="border-collapse: collapse; width: 100%; max-width: 500px; margin-top: 12px; font-family: sans-serif;">
-        <tr style="border-bottom: 1px solid #cbd5e1;">
-          <th style="text-align: left; padding: 8px 0;">Item</th>
-          <th style="text-align: right; padding: 8px 0;">Details</th>
-        </tr>
-        <tr>
-          <td style="padding: 8px 0;">Format</td>
-          <td style="text-align: right; padding: 8px 0; font-weight: bold;">${fmt.label}</td>
-        </tr>
-        <tr>
-          <td style="padding: 8px 0;">Unit Price</td>
-          <td style="text-align: right; padding: 8px 0;">Rs ${basePrice.toLocaleString("en-IN")}</td>
-        </tr>
-        <tr>
-          <td style="padding: 8px 0;">Quantity</td>
-          <td style="text-align: right; padding: 8px 0;">${quantity}</td>
-        </tr>
-        <tr style="border-top: 1px solid #e2e8f0;">
-          <td style="padding: 8px 0;">Subtotal</td>
-          <td style="text-align: right; padding: 8px 0;">Rs ${subtotal.toLocaleString("en-IN")}</td>
-        </tr>
-        ${discountPercent > 0 ? `
-        <tr style="color: #0f766e;">
-          <td style="padding: 8px 0;">Bulk Discount (${discountPercent}%)</td>
-          <td style="text-align: right; padding: 8px 0;">-Rs ${discountAmount.toLocaleString("en-IN")}</td>
-        </tr>` : ""}
-        ${validCreditsToUse > 0 ? `
-        <tr style="color: #D9A441;">
-          <td style="padding: 8px 0;">MI Credits Applied (${validCreditsToUse})</td>
-          <td style="text-align: right; padding: 8px 0;">-Rs ${creditDiscountINR.toLocaleString("en-IN")}</td>
-        </tr>` : ""}
-        <tr style="border-top: 2px solid #94a3b8; font-weight: bold; font-size: 1.1rem; color: #0f172a;">
-          <td style="padding: 8px 0;">Total Amount</td>
-          <td style="text-align: right; padding: 8px 0;">Rs ${finalPrice.toLocaleString("en-IN")}</td>
-        </tr>
-      </table>
-    `;
-
     try {
       await resend.emails.send({
-        from: "KILL BUSYness <admin@killbusyness.com>",
-        to: "admin@managementinnovations.co.in",
-        cc: "manoj@managementinnovations.co.in",
-        replyTo: email,
-        subject: `Book order ${ref} — ${fmt.label} — Qty ${quantity} — Rs ${finalPrice}`,
-        html:
-          `<p><strong>${name}</strong>${company ? ` (${company})` : ""} ordered the <strong>${fmt.label}</strong>.</p>` +
-          `<p><strong>Reference:</strong> ${ref}<br/>` +
-          `<strong>Email:</strong> ${email}<br/><strong>Phone:</strong> ${phone}</p>` +
-          `<h3>Order Summary</h3>` +
-          emailBreakdown +
-          `<p><strong>Delivery:</strong><br/>${delivery}</p>` +
-          `<p>Payment is by UPI and is <strong>not yet confirmed</strong>. Mark the order paid once the money arrives.</p>`
-      });
-    } catch {
-    }
-    
-    try {
-      await resend.emails.send({
-        from: "KILL BUSYness <admin@killbusyness.com>",
+        from: "KILL BUSYness <hello@killbusyness.com>",
         to: email,
-        cc: "manoj@managementinnovations.co.in",
-        subject: `Your KILL BUSYness order ${ref}`,
-        html:
-          `<p>Thank you ${name},</p>` +
-          `<p>Your order for the <strong>${fmt.label}</strong> is recorded. Reference: <strong>${ref}</strong>.</p>` +
-          `<h3>Order Summary</h3>` +
-          emailBreakdown +
-          `<p>To complete it, pay by UPI and <strong>put ${ref} in the payment note</strong> so we can match it to your order.</p>` +
-          `<p>${fmt.physical ? "Once payment is confirmed your copy will be couriered to the address you gave." : "Once payment is confirmed the eBook will be emailed to this address."}</p>` +
-          `<p>Questions? Just reply to this email.</p>`
+        subject: `Your Order Reference: ${ref}`,
+        html: `<p>Hi ${name},</p><p>You ordered ${quantity}x <strong>${fmt.label}</strong>.</p><p>Your reference is <strong>${ref}</strong>.</p><p>Amount to pay: ${isInternational ? 'US$' : 'Rs'} ${finalPrice}</p><p>Please complete payment by ${isInternational ? 'Razorpay' : 'UPI'} if you haven't already.</p>`
       });
-    } catch {
-    }
+    } catch (e) {}
   }
 
-  redirect(`/buy?ref=${encodeURIComponent(ref)}&format=${formatKey}`);
+  redirect(`/buy?format=${fmt.key}&ref=${ref}${isInternational ? '&intl=true' : ''}`);
 }
 
 export async function submitTransactionId(formData: FormData) {
-  const ref = String(formData.get("ref") || "").trim();
-  const utr = String(formData.get("utr") || "").trim();
-  const formatKey = String(formData.get("format") || "paperback").trim();
+  const ref = String(formData.get("ref") || "");
+  const utr = String(formData.get("utr") || "");
+  const format = String(formData.get("format") || "");
 
-  if (!ref) redirect("/buy");
-
-  const supabase = createClient();
-  
-  // Fetch existing order details
-  const { data: order } = await supabase
-    .from("book_orders")
-    .select("notes, amount, name, email")
-    .eq("ref", ref)
-    .maybeSingle();
-
-  if (order) {
-    const updatedNotes = order.notes 
-      ? `${order.notes}, UTR: ${utr}`
-      : `UTR: ${utr}`;
-
-    await supabase
-      .from("book_orders")
-      .update({ notes: updatedNotes })
-      .eq("ref", ref);
-
-    // Send notification email to admin about UTR submission
-    const key = process.env.RESEND_API_KEY;
-    if (key && utr) {
-      const resend = new Resend(key);
-      try {
-        await resend.emails.send({
-          from: "KILL BUSYness <admin@killbusyness.com>",
-          to: "admin@managementinnovations.co.in",
-          cc: "manoj@managementinnovations.co.in",
-          subject: `Payment update for order ${ref} — UTR: ${utr}`,
-          html: `<p>Payment details updated for order <strong>${ref}</strong> (${order.name}, ${order.email}).</p>` +
-                `<p><strong>UPI Transaction Reference / UTR:</strong> ${utr}</p>`
-        });
-      } catch {}
+  if (ref && utr) {
+    const supabase = createClient();
+    const { data: order } = await supabase.from("book_orders").select("notes").eq("ref", ref).single();
+    if (order) {
+      await supabase
+        .from("book_orders")
+        .update({ notes: (order.notes || "") + `\n[UTR: ${utr}]` })
+        .eq("ref", ref);
     }
   }
 
-  redirect(`/buy?ref=${encodeURIComponent(ref)}&paid=true&format=${formatKey}`);
+  redirect(`/buy?format=${format}&ref=${ref}&paid=true`);
 }

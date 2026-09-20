@@ -14,7 +14,7 @@ export async function registerAccount(formData: FormData) {
     options: { data: { name } }
   });
   if (error) {
-    redirect(`/register?error=${encodeURIComponent(error.message)}`);
+    return { error: error.message };
   }
 
   // Check if they completed an audit survey, and award 25 points if they did
