@@ -1,4 +1,4 @@
-import Link from "next/link";
+﻿import Link from "next/link";
 import Header from "@/components/Header";
 
 export const metadata = {
@@ -44,10 +44,10 @@ export default function MasterclassPage() {
           <div className="card" style={{ padding: "32px", flex: 1, display: "flex", flexDirection: "column" }}>
             <h3 style={{ fontSize: "1.4rem", marginBottom: "16px" }}>2. Align Your Leadership</h3>
             <p style={{ color: "#475569", marginBottom: "24px", flexGrow: 1 }}>
-              Get everyone speaking the same language. Order a bulk package of the KILL BUSYness book for your entire management team to start the transition.
+              Get everyone speaking the same language. Order a package of the KILL BUSYness book for your entire management team to start the transition.
             </p>
             <Link href="/buy?format=paperback" className="btn btn-dark" style={{ textAlign: "center" }}>
-              Order Bulk Copies
+              Order the Book for your Team
             </Link>
           </div>
 
@@ -56,4 +56,5 @@ export default function MasterclassPage() {
     </>
   );
 }
+
 
