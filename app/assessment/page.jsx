@@ -110,10 +110,10 @@ const LEVEL_HINT = {
 };
 
 function bandFor(index) {
-  if (index < 40) return { name: "XO Aspirant", note: "Committed to the journey; not yet ready for certification", color: "#8A8F98" };
-  if (index < 60) return { name: "XO Certified", note: "Meets the baseline standard across all 8 pillars", color: "#C9A24B" };
-  if (index < 80) return { name: "XO Distinguished", note: "Consistently strong; several pillars at Exemplary level", color: "#A9812F" };
-  return { name: "XO Extraordinary", note: "Regenerative impact; sector-defining benchmark", color: "#14213D" };
+  if (index < 40) return { name: "HPO Aspirant", note: "Committed to the journey; not yet ready for certification", color: "#8A8F98" };
+  if (index < 60) return { name: "HPO Certified", note: "Meets the baseline standard across all 8 pillars", color: "#C9A24B" };
+  if (index < 80) return { name: "HPO Distinguished", note: "Consistently strong; several pillars at Exemplary level", color: "#A9812F" };
+  return { name: "HPO Extraordinary", note: "Regenerative impact; sector-defining benchmark", color: "#14213D" };
 }
 
 function Hex({ state }) {
@@ -405,14 +405,14 @@ export default function XOSelfAssessment() {
       `}</style>
 
       <div className="xo-shell">
-        <div className="xo-eyebrow">ODeX &middot; Extraordinary Organizations</div>
+        <div className="xo-eyebrow">HPO &middot; High Performance Organizations</div>
 
         {screen === "landing" && (
           <>
             <h1 className="xo-h1">Where does your organization stand, right now?</h1>
             <p className="xo-lede">
-              A self-guided diagnostic against the XO Standards &mdash; 8 pillars, 32 questions,
-              about 10 minutes. You'll get a maturity level per pillar and your XO Index.
+              A self-guided diagnostic against the HPO Standards &mdash; 8 pillars, 32 questions,
+              about 10 minutes. You'll get a maturity level per pillar and your HPO Index.
             </p>
             <div className="xo-card">
               <div className="xo-hero-hex">
@@ -430,8 +430,8 @@ export default function XOSelfAssessment() {
               </div>
               <p style={{ fontSize: 13, color: "var(--grey)", margin: "0 0 24px" }}>
                 For each statement, rate how true it is of your organization today &mdash; not your aspiration.
-                This tool is a self-assessment, not a certification; XO Certified status requires an independent
-                XO Assessor engagement.
+                This tool is a self-assessment, not a certification; HPO Certified status requires an independent
+                HPO Assessor engagement.
               </p>
               <button className="xo-btn xo-btn-primary" onClick={goNext}>Begin assessment</button>
             </div>
@@ -514,7 +514,7 @@ export default function XOSelfAssessment() {
 
             <div className="xo-index-block">
               <div className="xo-index-number">{xoIndex}</div>
-              <div className="xo-index-sub">XO Index / 100</div>
+              <div className="xo-index-sub">HPO Index / 100</div>
               <div className="xo-band-pill" style={{ background: band.color }}>{band.name}</div>
               <div className="xo-band-note">{band.note}</div>
             </div>
@@ -525,7 +525,7 @@ export default function XOSelfAssessment() {
                   <PolarGrid stroke="#E4DFD3" />
                   <PolarAngleAxis dataKey="pillar" tick={{ fontSize: 11, fill: "#14213D" }} />
                   <PolarRadiusAxis angle={90} domain={[0, 5]} tick={false} axisLine={false} />
-                  <Radar name="XO Profile" dataKey="level" stroke="#C9A24B" fill="#C9A24B" fillOpacity={0.35} strokeWidth={2} />
+                  <Radar name="HPO Profile" dataKey="level" stroke="#C9A24B" fill="#C9A24B" fillOpacity={0.35} strokeWidth={2} />
                 </RadarChart>
               </ResponsiveContainer>
             </div>
@@ -546,11 +546,11 @@ export default function XOSelfAssessment() {
             </div>
 
             <p className="xo-disclaimer">
-              This is a self-guided diagnostic aligned to the XO Standards v1.0. It is designed to
-              show you where to focus first, not to certify you. XO Certified status requires an
-              independent XO Assessor engagement through the XO Developmental Journey. Individual
+              This is a self-guided diagnostic aligned to the HPO Standards v1.0. It is designed to
+              show you where to focus first, not to certify you. HPO Certified status requires an
+              independent HPO Assessor engagement through the HPO Developmental Journey. Individual
               pillar scores here are private to you \u2014 only a certified organization's composite
-              XO Index and band are ever made public.
+              HPO Index and band are ever made public.
             </p>
 
             <div className="xo-footer-actions" data-html2canvas-ignore="true">
