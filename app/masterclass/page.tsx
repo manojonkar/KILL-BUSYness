@@ -36,7 +36,7 @@ export default function MasterclassPage() {
             <p style={{ color: "#475569", marginBottom: "24px", flexGrow: 1 }}>
               Ready to confront the BUSYness trap head-on? Book Manoj Onkar for a 1-4 hour Executive Awareness Session or a 2-Day Workshop with your leadership team.
             </p>
-            <Link href="/contact" className="btn btn-primary" style={{ textAlign: "center" }}>
+            <Link href="https://calendar.app.google/25NHpaCLt7d1UvYRA" className="btn btn-primary" style={{ textAlign: "center" }}>
               Inquire About Workshops
             </Link>
           </div>
@@ -56,3 +56,4 @@ export default function MasterclassPage() {
     </>
   );
 }
+
