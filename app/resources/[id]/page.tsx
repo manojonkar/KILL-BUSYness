@@ -1,9 +1,12 @@
-"use client";
+﻿"use client";
 import React from 'react';
 import { resourcesData } from '@/lib/resourcesData';
 import ProgressiveGate from '@/components/ProgressiveGate';
 import Link from 'next/link';
-import { ChevronLeft } from 'lucide-react';
+
+const BackIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1"><path d="m15 18-6-6 6-6"/></svg>
+);
 
 export default function ResourceVideoPage({ params }: { params: { id: string } }) {
   const resource = resourcesData.find(r => r.id.toString() === params.id);
@@ -16,7 +19,7 @@ export default function ResourceVideoPage({ params }: { params: { id: string } }
     <div className="min-h-screen bg-[#071022] text-slate-200 py-12 px-4">
       <div className="max-w-4xl mx-auto">
         <Link href="/resources" className="inline-flex items-center text-slate-400 hover:text-white mb-8 transition-colors">
-          <ChevronLeft size={20} className="mr-1" />
+          <BackIcon />
           Back to Executive Briefings
         </Link>
         
@@ -26,7 +29,6 @@ export default function ResourceVideoPage({ params }: { params: { id: string } }
 
         <ProgressiveGate videoId={resource.id}>
           <div className="bg-black rounded-xl overflow-hidden shadow-2xl border border-slate-700 relative">
-            {/* Transparent overlay to block some dev tools right clicks */}
             <div className="absolute inset-0 z-10 pointer-events-none" onContextMenu={(e) => e.preventDefault()} />
             <video 
               className="w-full aspect-video z-0 relative"
