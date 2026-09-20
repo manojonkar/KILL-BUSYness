@@ -38,7 +38,7 @@ export default function ChapterStoreGroup({
         </div>
         <div style={{ color: "#0E9C74", fontSize: "0.95rem", fontWeight: 600, display: "flex", alignItems: "center", gap: 8 }}>
           {items.length} items
-          <span style={{ transform: open ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)", display: "inline-block" }}>â–¼</span>
+          <span style={{ transform: open ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)", display: "inline-block" }}>▼</span>
         </div>
       </div>
       
@@ -49,9 +49,9 @@ export default function ChapterStoreGroup({
               <span style={{ fontSize: ".9rem", fontWeight: 600 }}>{s.name}</span>
               <div className="store-price" style={{ display: "flex", alignItems: "center", gap: 12 }}>
                 {s.cost === 0 ? (
-                  
+                  <span style={{color: '#9ca3af', fontSize: '0.8rem', fontWeight: 600}}>FREE</span>
                 ) : (
-                  <>â—† {s.cost}</>
+                  <>— {s.cost}</>
                 )}
                 <RedeemButton name={s.name} cost={s.cost} canAfford={wallet >= s.cost} />
               </div>
@@ -62,5 +62,3 @@ export default function ChapterStoreGroup({
     </div>
   );
 }
-
-
