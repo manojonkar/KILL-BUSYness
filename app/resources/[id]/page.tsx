@@ -26,7 +26,7 @@ export default function ResourceVideoPage({ params }: { params: { id: string } }
       <div style={{ minHeight: '100vh', backgroundColor: '#050c1a', color: '#f8fafc', padding: '60px 20px', fontFamily: 'var(--sans)' }}>
         <div style={{ maxWidth: '900px', margin: '0 auto' }}>
           
-          <style dangerouslySetInnerHTML={{ __html: 
+          <style dangerouslySetInnerHTML={{ __html: `
             .back-link {
               display: inline-flex;
               align-items: center;
@@ -40,7 +40,7 @@ export default function ResourceVideoPage({ params }: { params: { id: string } }
             .back-link:hover {
               color: #fff;
             }
-          }} />
+          `}} />
 
           <Link href="/resources" className="back-link">
             <BackIcon />
