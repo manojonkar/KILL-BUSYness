@@ -1,4 +1,4 @@
-import Link from "next/link";
+ï»¿import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { MI_LOGO, EMBLEM, BOOK_COVER } from "@/lib/brand";
 import { getProgress, levelFor, levelName } from "@/lib/gamification";
@@ -24,9 +24,9 @@ export default async function Header({ active }: { active?: string }) {
     <>
       <div className="utilitybar">
         <div className="utilitybar-inner">
-          <img className="mi-logo-img" alt="Management Innovations — Vision to Implementation" src={MI_LOGO} />
+          <img className="mi-logo-img" alt="Management Innovations â€” Vision to Implementation" src={MI_LOGO} />
           <Link href="/read" className="utilitybar-book">
-            <img className="book-cover-thumb" alt="KILL BUSYness — the book, front cover" src={BOOK_COVER} />
+            <img className="book-cover-thumb" alt="KILL BUSYness â€” the book, front cover" src={BOOK_COVER} />
           </Link>
         </div>
       </div>
@@ -49,10 +49,10 @@ export default async function Header({ active }: { active?: string }) {
             {user && progress ? (
               <div style={{ textAlign: "right", lineHeight: 1.25 }}>
                 <div style={{ fontSize: "0.82rem", fontWeight: 700, color: "var(--teal-ink, #0f766e)", marginBottom: 2 }}>
-                  L{levelFor(progress.xp)} · {levelName(progress.xp)}
+                  L{levelFor(progress.xp)} Â· {levelName(progress.xp)}
                 </div>
                 <div style={{ fontSize: "0.74rem", color: "var(--ink-soft)", fontWeight: 500 }}>
-                  ? {progress.wallet} MI Credits <span style={{ color: "#cbd5e1", margin: "0 4px" }}>•</span> S {progress.xp} Lifetime
+                  ? {progress.wallet} MI Credits <span style={{ color: "#cbd5e1", margin: "0 4px" }}>â€¢</span> S {progress.xp} Lifetime
                 </div>
               </div>
             ) : (
