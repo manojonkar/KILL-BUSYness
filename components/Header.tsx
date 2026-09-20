@@ -32,12 +32,12 @@ export default async function Header({ active }: { active?: string }) {
           </div>
         </div>
         
-        {/* ROW 1: MAIN NAVIGATION */}
-        <div className="topbar" style={{ paddingBottom: '0' }}>
-          <div className="topbar-inner" style={{ justifyContent: 'center' }}>
-            <nav className="nav" style={{ flexWrap: 'wrap', justifyContent: 'center', gap: '15px' }}>
+        {/* ROW 1: ORIGINAL MAIN NAVIGATION (No inline overrides) */}
+        <div className="topbar">
+          <div className="topbar-inner">
+            <nav className="nav">
               {NAV.map((n) => (
-                <Link key={n.href} href={n.href} className={active === n.label ? "active" : ""} style={{ color: 'white' }}>
+                <Link key={n.href} href={n.href} className={active === n.label ? "active" : ""}>
                   {n.label}
                 </Link>
               ))}
@@ -46,29 +46,29 @@ export default async function Header({ active }: { active?: string }) {
         </div>
 
         {/* ROW 2: HUD / DASHBOARD COMPACT AREA */}
-        <div style={{ backgroundColor: '#0f172a', borderBottom: '1px solid #1e293b', padding: '10px 20px' }}>
+        <div style={{ backgroundColor: '#0f172a', borderTop: '1px solid #cbd5e1', borderBottom: '1px solid #1e293b', padding: '8px 20px' }}>
           <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
             <div className="hud" style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
               {user ? (
                 <>
-                  <Link href="/dashboard" style={{ padding: '6px 14px', fontSize: '0.8rem', color: 'white', backgroundColor: '#334155', borderRadius: '6px', textDecoration: 'none', fontWeight: 'bold' }}>
+                  <Link href="/dashboard" style={{ padding: '6px 14px', fontSize: '0.8rem', color: '#ffffff', backgroundColor: '#334155', borderRadius: '6px', textDecoration: 'none', fontWeight: 'bold', border: '1px solid #475569' }}>
                     Dashboard
                   </Link>
-                  <Link href="/rewards" className="chip credits" style={{ textDecoration: "none", padding: '4px 10px', fontSize: '0.75rem' }}>
-                    -+ {progress?.xp || 0}
+                  <Link href="/rewards" className="chip credits" style={{ textDecoration: "none", padding: '4px 10px', fontSize: '0.75rem', backgroundColor: '#1e293b', color: '#f8fafc', border: '1px solid #334155', borderRadius: '100px' }}>
+                    XP: {progress?.xp || 0}
                   </Link>
-                  <Link href="/rewards" className="chip level" style={{ textDecoration: "none", padding: '4px 10px', fontSize: '0.75rem' }}>
+                  <Link href="/rewards" className="chip level" style={{ textDecoration: "none", padding: '4px 10px', fontSize: '0.75rem', backgroundColor: '#1e293b', color: '#f8fafc', border: '1px solid #334155', borderRadius: '100px' }}>
                     {levelName(progress?.xp || 0)}
                   </Link>
                   {(progress?.wallet ?? 0) > 0 && (
-                    <Link href="/rewards" className="chip wallet" style={{ textDecoration: "none", padding: '4px 10px', fontSize: '0.75rem' }}>
+                    <Link href="/rewards" className="chip wallet" style={{ textDecoration: "none", padding: '4px 10px', fontSize: '0.75rem', backgroundColor: '#0E9C74', color: '#ffffff', borderRadius: '100px' }}>
                       {progress?.wallet} Credits
                     </Link>
                   )}
                   <LogoutButton />
                 </>
               ) : (
-                <Link href="/login" style={{ padding: '6px 14px', fontSize: '0.8rem', color: 'white', backgroundColor: '#0E9C74', borderRadius: '6px', textDecoration: 'none', fontWeight: 'bold' }}>
+                <Link href="/login" style={{ padding: '6px 14px', fontSize: '0.8rem', color: '#ffffff', backgroundColor: '#0E9C74', borderRadius: '6px', textDecoration: 'none', fontWeight: 'bold' }}>
                   Sign In
                 </Link>
               )}
