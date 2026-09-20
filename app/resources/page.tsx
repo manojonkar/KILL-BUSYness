@@ -1,4 +1,4 @@
-﻿import React from 'react';
+﻿"use client";`nimport React from 'react';
 import Link from 'next/link';
 import { resourcesData } from '@/lib/resourcesData';
 
@@ -80,4 +80,5 @@ export default function ResourcesPage() {
     </div>
   );
 }
+
 
