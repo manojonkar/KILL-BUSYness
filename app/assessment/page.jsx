@@ -5,6 +5,7 @@ import {
 } from "recharts";
 import { createClient } from '@supabase/supabase-js';
 import html2canvas from 'html2canvas';
+import { sendAssessmentEmail } from "./actions";
 
 // Initialize Supabase client
 // Replace 'https://oictzdcrqgwawezwjzr.supabase.co' with your actual project URL from the Supabase dashboard
@@ -232,19 +233,21 @@ export default function XOSelfAssessment() {
 
   const submitResults = async () => {
     try {
-      if (supabaseUrl !== 'https://oictzdcrqgwawezwjzr.supabase.co') {
-        await supabase.from('assessments').insert([{
-          org_name: orgName,
-          email: email,
-          xo_index: xoIndex,
-          answers: answers,
-          band_name: band ? band.name : ''
-        }]);
-      } else {
-        console.warn("Supabase URL not configured. Data not saved.");
+      // 1. Save to Supabase
+      await supabase.from('assessments').insert([{
+        org_name: orgName,
+        email: email,
+        xo_index: xoIndex,
+        answers: answers,
+        band_name: band ? band.name : ''
+      }]);
+      
+      // 2. Trigger Email #1 via Resend
+      if (email && email.includes('@')) {
+        await sendAssessmentEmail(email, xoIndex, band ? band.name : '');
       }
     } catch (e) {
-      console.error('Error saving assessment:', e);
+      console.error('Error saving assessment or sending email:', e);
     }
     setScreen("results");
   };
