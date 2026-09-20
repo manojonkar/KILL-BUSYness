@@ -6,7 +6,7 @@ import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { hasPurchasedAudioBook } from "@/lib/book";
 import { hasRedeemedAudioChapter, hasRedeemedFullAudioBook, getChapterReads } from "@/lib/gamification";
 
-const FULL_AUDIOBOOK_VIDEO_ID = "GiQUcopGyK0";
+const FULL_AUDIOBOOK_VIDEO_ID = "ESwDzvA9mCg";
 
 export default async function ListenLibraryPage() {
   try {
