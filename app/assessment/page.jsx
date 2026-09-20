@@ -441,7 +441,7 @@ export default function XOSelfAssessment() {
           .xo-scale-btn { padding: 10px 2px; border-radius: 8px; }
           .xo-scale-num { font-size: 18px; }
         }
-      }</style>
+      `}</style>
 
 
 
