@@ -11,7 +11,7 @@ export async function GET(request: Request) {
   const cronSecret = process.env.CRON_SECRET;
   const authHeader = request.headers.get("Authorization");
   const isAuthorized =
-    (cronSecret && authHeader === "Bearer " + cronSecret) ||
+    (cronSecret && authHeader === `Bearer ${cronSecret}`) ||
     secret === "oictzdcrdqgwawezwjzr" ||
     process.env.NODE_ENV === "development";
 
@@ -29,12 +29,12 @@ export async function GET(request: Request) {
 
   let sentParticipantCount = 0;
   let sentAdminCount = 0;
+  let sentMasterclassCount = 0;
   const today = new Date();
   const currentDay = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate());
 
   try {
     // 1. PARTICIPANT REMINDERS (Day 3 and Day 6)
-    // Fetch pending participants created in the last 7 days
     const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
     
     const { data: pending, error: pError } = await supabase
@@ -58,13 +58,13 @@ export async function GET(request: Request) {
           await resend.emails.send({
             from: "KILL BUSYness Portal <admin@killbusyness.com>",
             to: p.email,
-            subject: \: Invitation to the KILL BUSYness Organization Audit,
-            html: <p>Dear \,</p>
-                   <p>This is a polite reminder that <strong>\</strong> has invited you to take part in the KILL BUSYness Organization Audit.</p>
+            subject: `${reminderText}: Invitation to the KILL BUSYness Organization Audit`,
+            html: `<p>Dear ${p.name || "Colleague"},</p>
+                   <p>This is a polite reminder that <strong>${companyName}</strong> has invited you to take part in the KILL BUSYness Organization Audit.</p>
                    <p>We notice you haven't had a chance to complete it yet. Your confidential insights are critical to understanding the organization's true operational health.</p>
-                   <p><a href="\/survey/\" style="display:inline-block;padding:10px 20px;background-color:#0E9C74;color:white;text-decoration:none;border-radius:6px;margin-top:10px;">Click here to complete your Audit Survey</a></p>
+                   <p><a href="${siteUrl}/survey/${p.invite_token}" style="display:inline-block;padding:10px 20px;background-color:#0E9C74;color:white;text-decoration:none;border-radius:6px;margin-top:10px;">Click here to complete your Audit Survey</a></p>
                    <p>It takes approximately 10 minutes and your individual responses will remain completely anonymous.</p>
-                   <p>Thank you,<br/>The KILL BUSYness Team</p>
+                   <p>Thank you,<br/>The KILL BUSYness Team</p>`
           });
           sentParticipantCount++;
         }
@@ -86,11 +86,9 @@ export async function GET(request: Request) {
         const diffDays = Math.floor((currentDay - createdDay) / (1000 * 60 * 60 * 24));
 
         if (diffDays === 3 || diffDays === 6) {
-          // Fetch admin email
           const { data: adminData } = await supabase.auth.admin.getUserById(comp.admin_user_id);
           if (!adminData.user?.email) continue;
 
-          // Fetch all participants for this company
           const { data: allParticipants } = await supabase
             .from("participants")
             .select("name, email, status")
@@ -104,31 +102,58 @@ export async function GET(request: Request) {
             const reminderType = diffDays === 3 ? "Update" : "Final Update";
             
             const completedList = completed.length > 0 
-              ? completed.map(p => <li>\</li>).join("") 
+              ? completed.map(p => `<li>${p.name || p.email}</li>`).join("") 
               : "<li><em>None yet</em></li>";
             
-            const pendingList = pendingParts.map(p => <li>\</li>).join("");
+            const pendingList = pendingParts.map(p => `<li>${p.name || p.email}</li>`).join("");
 
             await resend.emails.send({
               from: "KILL BUSYness Portal <admin@killbusyness.com>",
               to: adminEmail,
-              subject: \: Audit Participation Status for \,
-              html: <p>Hello,</p>
-                     <p>Here is the current participation status for the <strong>\</strong> Organization Audit.</p>
+              subject: `${reminderType}: Audit Participation Status for ${comp.name}`,
+              html: `<p>Hello,</p>
+                     <p>Here is the current participation status for the <strong>${comp.name}</strong> Organization Audit.</p>
                      
-                     <h3 style="color:#0E9C74">Completed the Survey (\):</h3>
-                     <ul>\</ul>
+                     <h3 style="color:#0E9C74">Completed the Survey (${completed.length}):</h3>
+                     <ul>${completedList}</ul>
                      
-                     <h3 style="color:#e11d48">Pending Completion (\):</h3>
-                     <ul>\</ul>
+                     <h3 style="color:#e11d48">Pending Completion (${pendingParts.length}):</h3>
+                     <ul>${pendingList}</ul>
                      
                      <p><strong>Action Requested:</strong> To ensure accurate audit results, we kindly request that you personally remind the pending participants to complete the survey at their earliest convenience.</p>
                      
-                     <p><a href="\/dashboard" style="display:inline-block;padding:10px 20px;background-color:#334155;color:white;text-decoration:none;border-radius:6px;margin-top:10px;">Go to your Dashboard</a></p>
-                     <p>Best regards,<br/>The KILL BUSYness Team</p>
+                     <p><a href="${siteUrl}/dashboard" style="display:inline-block;padding:10px 20px;background-color:#334155;color:white;text-decoration:none;border-radius:6px;margin-top:10px;">Go to your Dashboard</a></p>
+                     <p>Best regards,<br/>The KILL BUSYness Team</p>`
             });
             sentAdminCount++;
           }
+        }
+      }
+    }
+
+    // 3. MASTERCLASS INVITE (Day 7 after user registration)
+    // Query users who registered ~7 days ago using auth.users via admin API
+    const { data: usersData, error: uError } = await supabase.auth.admin.listUsers();
+    if (!uError && usersData?.users) {
+      for (const u of usersData.users) {
+        const created = new Date(u.created_at);
+        const createdDay = Date.UTC(created.getFullYear(), created.getMonth(), created.getDate());
+        const diffDays = Math.floor((currentDay - createdDay) / (1000 * 60 * 60 * 24));
+
+        // Exact Day 7 condition
+        if (diffDays === 7 && u.email) {
+          await resend.emails.send({
+            from: "Manoj Onkar <admin@killbusyness.com>",
+            to: u.email,
+            subject: "Your Exclusive Invite: The KILL BUSYness Masterclass",
+            html: `<p>Hi ${u.user_metadata?.name || "there"},</p>
+                   <p>It's been a week since you joined the KILL BUSYness journey. I wanted to personally invite you to the next step.</p>
+                   <p>We've unlocked access to our exclusive <strong>High-Performance Masterclass</strong> for your account.</p>
+                   <p>In this session, we break down exactly how you can transition your leadership team from an Extractive, BUSY culture to a Generative, High-Performance Organization.</p>
+                   <p><a href="${siteUrl}/masterclass" style="display:inline-block;padding:12px 24px;background-color:#0E9C74;color:white;text-decoration:none;border-radius:6px;margin-top:10px;font-weight:bold;">Watch the Masterclass Now</a></p>
+                   <p>Best regards,<br/>Manoj Onkar</p>`
+          });
+          sentMasterclassCount++;
         }
       }
     }
@@ -137,7 +162,8 @@ export async function GET(request: Request) {
       success: true,
       timeRun: new Date().toISOString(),
       sentParticipantCount,
-      sentAdminCount
+      sentAdminCount,
+      sentMasterclassCount
     });
   } catch (err: any) {
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });
