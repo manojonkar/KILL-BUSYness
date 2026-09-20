@@ -1,4 +1,5 @@
-﻿"use client";`nimport React from 'react';
+﻿"use client";
+import React from 'react';
 import Link from 'next/link';
 import { resourcesData } from '@/lib/resourcesData';
 
@@ -28,7 +29,7 @@ export default function ResourcesPage() {
         {/* GRID OF VSLs */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '24px' }}>
           {resourcesData.map((resource, idx) => (
-            <Link key={resource.id} href={`/resources/${resource.id}`} style={{ textDecoration: 'none' }}>
+            <Link key={resource.id} href={/resources/} style={{ textDecoration: 'none' }}>
               <div 
                 className="chapter-card"
                 style={{
@@ -80,5 +81,3 @@ export default function ResourcesPage() {
     </div>
   );
 }
-
-
