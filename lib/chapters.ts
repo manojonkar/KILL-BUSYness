@@ -18,6 +18,7 @@ export const CHAPTERS: Chapter[] = [
     title: "Reinventing Management",
     roar: "Foundation",
     xp: 60,
+    isAudioPublic: true,
     desc: "The blind spot at the heart of a hundred years of management thinking — and the shift from extractive to regenerative leadership.",
     reflect: "Where in your own language do you still talk about people as a \"resource\" rather than as a source? What would change if you spoke of them the other way?",
     videoId: "FXiJrfTq5oU"
@@ -123,3 +124,6 @@ export const CHAPTERS: Chapter[] = [
     videoId: "HTX2eggAMxg"
   },
 ];
+
+
+

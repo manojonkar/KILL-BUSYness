@@ -18,8 +18,8 @@ export default async function ChapterPage({ params }: { params: { id: string } }
   const adminClient = createAdminClient();
   const { data: { user } } = await supabase.auth.getUser();
   
-  let isUnlocked = false;
-  let canWatchVideo = !!chapter.isAudioPublic;
+  let isUnlocked = chapterId === 0;
+  let canWatchVideo = !!chapter.isAudioPublic || chapterId === 0;
   if (user) {
     const boughtAny = await hasPurchasedAnyBook(adminClient, user.email || "");
     if (boughtAny) isUnlocked = true;
@@ -163,3 +163,4 @@ export default async function ChapterPage({ params }: { params: { id: string } }
     </>
   );
 }
+

@@ -49,7 +49,7 @@ export default function ChapterStoreGroup({
               <span style={{ fontSize: ".9rem", fontWeight: 600 }}>{s.name}</span>
               <div className="store-price" style={{ display: "flex", alignItems: "center", gap: 12 }}>
                 {s.cost === 0 ? (
-                  <span style={{ color: "#0E9C74", fontWeight: 700, fontSize: ".9rem" }}>FREE</span>
+                  
                 ) : (
                   <>◆ {s.cost}</>
                 )}
@@ -62,3 +62,4 @@ export default function ChapterStoreGroup({
     </div>
   );
 }
+
