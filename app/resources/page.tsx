@@ -19,7 +19,7 @@ export default function ResourcesPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {resourcesData.map((resource) => (
-            <Link key={resource.id} href={/resources/ + resource.id}>
+            <Link key={resource.id} href={`/resources/${resource.id}`}>
               <div className="group bg-slate-800/50 hover:bg-slate-800 border border-slate-700 hover:border-[#0E9C74] p-6 rounded-xl transition-all cursor-pointer h-full flex flex-col justify-between">
                 <div>
                   <div className="text-[#0E9C74] mb-3">
@@ -38,3 +38,4 @@ export default function ResourcesPage() {
     </div>
   );
 }
+
