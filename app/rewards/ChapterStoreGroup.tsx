@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import { useState } from "react";
 import RedeemButton from "./RedeemButton";
 
@@ -38,7 +38,7 @@ export default function ChapterStoreGroup({
         </div>
         <div style={{ color: "#0E9C74", fontSize: "0.95rem", fontWeight: 600, display: "flex", alignItems: "center", gap: 8 }}>
           {items.length} items
-          <span style={{ transform: open ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)", display: "inline-block" }}>▼</span>
+          <span style={{ transform: open ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)", display: "inline-block" }}>â–¼</span>
         </div>
       </div>
       
@@ -51,7 +51,7 @@ export default function ChapterStoreGroup({
                 {s.cost === 0 ? (
                   
                 ) : (
-                  <>◆ {s.cost}</>
+                  <>â—† {s.cost}</>
                 )}
                 <RedeemButton name={s.name} cost={s.cost} canAfford={wallet >= s.cost} />
               </div>
@@ -62,4 +62,5 @@ export default function ChapterStoreGroup({
     </div>
   );
 }
+
 

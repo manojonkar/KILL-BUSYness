@@ -1,4 +1,4 @@
-"use server";
+﻿"use server";
 
 import { Resend } from "resend";
 
@@ -17,15 +17,14 @@ export async function sendAssessmentEmail(email: string, score: number, bandName
       from: "Manoj Onkar <manoj@killbusyness.com>",
       to: email,
       subject: "Your HPO Score reveals a critical growth bottleneck",
-      html: 
+      html: `
         <div style="font-family: sans-serif; color: #1e293b; line-height: 1.6; max-width: 600px;">
           <p>Hi,</p>
           <p>You just ran your organization through the HPO Assessment. Your score placed you in the <strong>\</strong> category (\/100).</p>
           <p>Global engagement is currently sitting at 23% (and only 14% in India). This means your leadership team is dragging 80% of the company on its back. <em>That</em> is why your organization is so BUSY.</p>
           <p>Activity does not equal performance. If you want to fix this, I highly recommend picking up a copy of <a href="https://www.killbusyness.com/buy">KILL BUSYness</a> to understand how to unblock your growth.</p>
           <p>Best,<br>Manoj</p>
-        </div>
-      ,
+        </div>`,
     });
 
     if (err1) return { success: false, error: err1 };
@@ -38,15 +37,14 @@ export async function sendAssessmentEmail(email: string, score: number, bandName
       from: "Manoj Onkar <manoj@killbusyness.com>",
       to: email,
       subject: "The Three Silences killing your organization",
-      html: 
+      html: `
         <div style="font-family: sans-serif; color: #1e293b; line-height: 1.6; max-width: 600px;">
           <p>Hi,</p>
           <p>The reason 80% of your workforce is disengaged is due to Extractive Management.</p>
           <p>This creates the <strong>Three Silences</strong>: Silence of the Soul, Heart, and Head. People default to compliance rather than commitment.</p>
           <p>You can read the Introductory Chapter, <em>Reinventing Management</em>, right now on our portal to see exactly how to break these silences.</p>
           <p>Best,<br>Manoj</p>
-        </div>
-      ,
+        </div>`,
       scheduledAt: day3Date.toISOString(),
     });
 
@@ -57,3 +55,4 @@ export async function sendAssessmentEmail(email: string, score: number, bandName
     return { success: false, error: err };
   }
 }
+
