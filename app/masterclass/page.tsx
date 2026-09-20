@@ -1,5 +1,6 @@
 ﻿import Link from "next/link";
 import Header from "@/components/Header";
+import ProtectedVideo from "@/components/ProtectedVideo";
 
 export const metadata = {
   title: "KILL BUSYness Masterclass",
@@ -17,16 +18,11 @@ export default function MasterclassPage() {
           <p>Watch the 5-minute briefing on how to unblock stalled growth and build a High Performance Organization.</p>
         </div>
 
-        <div className="card" style={{ padding: "0", overflow: "hidden", marginBottom: "40px", maxWidth: "900px", margin: "0 auto 40px auto", background: "#000" }}>
-          <video 
-            controls 
-            autoPlay 
-            style={{ width: "100%", display: "block", aspectRatio: "16/9" }}
-            poster="/images/roar-concept.png"
-          >
-            <source src="/videos/KILL_BUSYness_VSL.mp4" type="video/mp4" />
-            Your browser does not support the video tag.
-          </video>
+        <div className="card" style={{ padding: "0", overflow: "hidden", marginBottom: "40px", maxWidth: "900px", margin: "0 auto 40px auto", background: "#000", border: "1px solid #e2e8f0", boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1)" }}>
+          <ProtectedVideo src="/videos/KILL_BUSYness_VSL.mp4" poster="/images/roar-concept.png" />
+          <div style={{ backgroundColor: '#f8fafc', padding: '16px', textAlign: 'center', color: '#64748b', fontSize: '0.85rem', borderTop: '1px solid #e2e8f0' }}>
+            <p>Confidential Executive Masterclass. Downloading and redistribution is strictly prohibited.</p>
+          </div>
         </div>
 
         <div className="mobile-stack" style={{ gap: "32px", maxWidth: "1000px", margin: "0 auto", alignItems: "stretch" }}>
@@ -56,5 +52,3 @@ export default function MasterclassPage() {
     </>
   );
 }
-
-
