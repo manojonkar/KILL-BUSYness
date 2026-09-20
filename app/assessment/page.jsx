@@ -554,8 +554,11 @@ export default function XOSelfAssessment() {
             </p>
 
             <div className="xo-footer-actions" data-html2canvas-ignore="true">
-              <button className="xo-btn xo-btn-primary" onClick={downloadBadge}>Download LinkedIn Badge</button>
-              <button className="xo-btn xo-btn-ghost" onClick={() => window.print()}>Save / print results</button>
+              <a href="https://www.highperformanceorganizations.com/" target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none' }}>
+                <button className="xo-btn xo-btn-primary" style={{ background: '#C9A24B', color: '#14213D', fontWeight: 'bold' }}>Unlock Full Team Audit</button>
+              </a>
+              <button className="xo-btn xo-btn-primary" onClick={downloadBadge}>Download Badge</button>
+              <button className="xo-btn xo-btn-ghost" onClick={() => window.print()}>Save / print</button>
               <button className="xo-btn xo-btn-ghost" onClick={restart}>Start over</button>
             </div>
           </div>
