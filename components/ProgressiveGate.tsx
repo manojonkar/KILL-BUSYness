@@ -27,26 +27,36 @@ export default function ProgressiveGate({ children, videoId }: { children: React
     setLevel(nextLevel);
     localStorage.setItem('hpo_profiling_level', nextLevel.toString());
     localStorage.setItem('hpo_profile_data', JSON.stringify(formData));
-    
-    // Here we could also sync 'formData' to Supabase/Resend
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  if (level === null) return <div className="p-8 text-center text-white">Loading Security...</div>;
+  if (level === null) return <div style={{ padding: '40px', textAlign: 'center', color: '#fff' }}>Loading Security Clearance...</div>;
 
-  // If already unlocked this specific video, or if they have completed all 4 levels of profiling
   if (unlockedVideos.includes(videoId) || level >= 4) {
     return <>{children}</>;
   }
 
+  const inputStyle = {
+    width: '100%',
+    backgroundColor: '#0f172a',
+    border: '1px solid #334155',
+    borderRadius: '8px',
+    padding: '16px',
+    color: '#f8fafc',
+    fontSize: '1rem',
+    marginBottom: '16px',
+    boxSizing: 'border-box' as const,
+    fontFamily: 'inherit'
+  };
+
   return (
-    <div className="max-w-xl mx-auto bg-slate-800 p-8 rounded-xl shadow-2xl border border-slate-700 mt-8">
-      <div className="text-center mb-6">
-        <h2 className="text-2xl font-bold text-white mb-2">Unlock This Resource</h2>
-        <p className="text-slate-400">
+    <div style={{ maxWidth: '600px', margin: '40px auto 0', backgroundColor: '#1e293b', padding: '40px', borderRadius: '16px', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.3)', border: '1px solid #334155' }}>
+      <div style={{ textAlign: 'center', marginBottom: '30px' }}>
+        <h2 style={{ fontSize: '1.8rem', fontWeight: 800, color: '#ffffff', marginBottom: '12px' }}>Secure Resource Access</h2>
+        <p style={{ color: '#94a3b8', fontSize: '1rem', lineHeight: 1.5 }}>
           {level === 0 && "To access this executive briefing, please introduce yourself."}
           {level === 1 && "Welcome back! To unlock your next resource, we need a little more context."}
           {level === 2 && "Almost there. Understanding your scale helps us tailor our insights."}
@@ -54,49 +64,49 @@ export default function ProgressiveGate({ children, videoId }: { children: React
         </p>
       </div>
 
-      <form onSubmit={handleUnlock} className="space-y-4">
+      <form onSubmit={handleUnlock}>
         {level === 0 && (
           <>
-            <input required type="text" name="name" placeholder="Full Name" onChange={handleChange} className="w-full bg-slate-900 border border-slate-600 rounded-lg p-3 text-white" />
-            <input required type="email" name="email" placeholder="Official Work Email" onChange={handleChange} className="w-full bg-slate-900 border border-slate-600 rounded-lg p-3 text-white" />
-            <input required type="text" name="company" placeholder="Company Name" onChange={handleChange} className="w-full bg-slate-900 border border-slate-600 rounded-lg p-3 text-white" />
+            <input required type="text" name="name" placeholder="Full Name" onChange={handleChange} style={inputStyle} />
+            <input required type="email" name="email" placeholder="Official Work Email" onChange={handleChange} style={inputStyle} />
+            <input required type="text" name="company" placeholder="Company Name" onChange={handleChange} style={inputStyle} />
           </>
         )}
 
         {level === 1 && (
           <>
-            <input required type="text" name="jobTitle" placeholder="Job Title (e.g., CEO, Director)" onChange={handleChange} className="w-full bg-slate-900 border border-slate-600 rounded-lg p-3 text-white" />
-            <input required type="text" name="industry" placeholder="Industry" onChange={handleChange} className="w-full bg-slate-900 border border-slate-600 rounded-lg p-3 text-white" />
+            <input required type="text" name="jobTitle" placeholder="Job Title (e.g., CEO, Director)" onChange={handleChange} style={inputStyle} />
+            <input required type="text" name="industry" placeholder="Industry" onChange={handleChange} style={inputStyle} />
           </>
         )}
 
         {level === 2 && (
           <>
-            <select required name="companySize" onChange={handleChange} className="w-full bg-slate-900 border border-slate-600 rounded-lg p-3 text-white">
+            <select required name="companySize" onChange={handleChange} style={inputStyle}>
               <option value="">Select Company Size...</option>
               <option value="1-50">1 - 50 Employees</option>
               <option value="51-200">51 - 200 Employees</option>
               <option value="201-1000">201 - 1,000 Employees</option>
               <option value="1000+">1,000+ Employees</option>
             </select>
-            <select required name="turnover" onChange={handleChange} className="w-full bg-slate-900 border border-slate-600 rounded-lg p-3 text-white">
+            <select required name="turnover" onChange={handleChange} style={inputStyle}>
               <option value="">Select Annual Turnover...</option>
-              <option value="<1M">Less than </option>
-              <option value="1M-10M"> - </option>
-              <option value="10M-50M"> - </option>
-              <option value="50M+">+</option>
+              <option value="<1M">Less than $1M</option>
+              <option value="1M-10M">$1M - </option>
+              <option value="10M-50M">$10M - </option>
+              <option value="50M+">$50M+</option>
             </select>
           </>
         )}
 
         {level === 3 && (
           <>
-            <textarea required name="challenge" placeholder="What is the biggest strategic bottleneck your company is facing right now?" rows={4} onChange={handleChange} className="w-full bg-slate-900 border border-slate-600 rounded-lg p-3 text-white" />
+            <textarea required name="challenge" placeholder="What is the biggest strategic bottleneck your company is facing right now?" rows={4} onChange={handleChange} style={{ ...inputStyle, resize: 'vertical', minHeight: '120px' }} />
           </>
         )}
 
-        <button type="submit" className="w-full bg-[#0E9C74] hover:bg-[#0b7a5a] text-white font-bold py-3 px-4 rounded-lg transition-colors">
-          Unlock Resource &rarr;
+        <button type="submit" style={{ width: '100%', backgroundColor: '#0E9C74', color: '#ffffff', fontWeight: 800, padding: '16px', borderRadius: '8px', border: 'none', fontSize: '1.1rem', cursor: 'pointer', marginTop: '10px', transition: 'background-color 0.2s' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#0b7a5a'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#0E9C74'}>
+          Unlock Executive Briefing &rarr;
         </button>
       </form>
     </div>
