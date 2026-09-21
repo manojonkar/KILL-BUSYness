@@ -10,27 +10,30 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: "Email is required" }, { status: 400 });
     }
 
-    // Try to find existing user
-    const { data: searchData, error: searchError } = await supabase.auth.admin.listUsers();
-    let existingUser = null;
+    const { data: searchData } = await supabase.auth.admin.listUsers();
+    const existingUser = searchData?.users?.find((u: any) => u.email === data.email);
     
-    if (searchData && searchData.users) {
-      existingUser = searchData.users.find((u: any) => u.email === data.email);
+    const engagementUpdate = {
+      ...data,
+      is_lead: true,
+      last_engaged_at: new Date().toISOString()
+    };
+
+    if (data.source === "masterclass") {
+      engagementUpdate.masterclass_accessed = true;
     }
 
     if (existingUser) {
-      // Update existing user metadata with new lead info
-      const newMetadata = { ...existingUser.user_metadata, ...data, is_lead: true };
-      await supabase.auth.admin.updateUserById(existingUser.id, { user_metadata: newMetadata });
+      await supabase.auth.admin.updateUserById(existingUser.id, { 
+        user_metadata: { ...existingUser.user_metadata, ...engagementUpdate } 
+      });
     } else {
-      // Create new lead user in auth.users
       await supabase.auth.admin.createUser({
         email: data.email,
-        password: Math.random().toString(36).slice(-10) + "A1!", // Random secure password
+        password: Math.random().toString(36).slice(-10) + "A1!",
         email_confirm: true,
         user_metadata: {
-          ...data,
-          is_lead: true,
+          ...engagementUpdate,
           created_via: "progressive_gate"
         }
       });
@@ -38,7 +41,6 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ success: true });
   } catch (error: any) {
-    console.error("Lead save error:", error);
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }

@@ -1,17 +1,41 @@
 ﻿"use server";
 import { Resend } from "resend";
-import { revalidatePath } from "next/cache";
+import { createAdminClient } from "@/lib/supabase/server";
 
 export async function sendMasterclassInvite(formData: FormData) {
   const resendApiKey = process.env.RESEND_API_KEY;
   if (!resendApiKey) throw new Error("RESEND_API_KEY missing");
   const resend = new Resend(resendApiKey);
+  const supabase = createAdminClient();
   
   const name = formData.get("name")?.toString();
   const email = formData.get("email")?.toString();
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.killbusyness.com";
 
   if (!email) throw new Error("Email is required");
+
+  // Track the invite in the database (auth.users)
+  const { data: searchData } = await supabase.auth.admin.listUsers();
+  const existingUser = searchData?.users?.find((u: any) => u.email === email);
+  
+  if (!existingUser) {
+    await supabase.auth.admin.createUser({
+      email,
+      password: Math.random().toString(36).slice(-10) + "A1!", 
+      email_confirm: true,
+      user_metadata: { 
+        name, 
+        is_masterclass_invitee: true,
+        masterclass_accessed: false,
+        invited_at: new Date().toISOString()
+      }
+    });
+  } else {
+    // If they already exist, just tag them as invited
+    await supabase.auth.admin.updateUserById(existingUser.id, {
+      user_metadata: { ...existingUser.user_metadata, is_masterclass_invitee: true }
+    });
+  }
 
   await resend.emails.send({
     from: "Manoj Onkar <admin@killbusyness.com>",
