@@ -11,9 +11,9 @@ export async function POST(request: Request) {
     }
 
     const { data: searchData } = await supabase.auth.admin.listUsers();
-    const existingUser = searchData?.users?.find((u: any) => u.email === data.email);
+    let existingUser = searchData?.users?.find((u: any) => u.email === data.email);
     
-    const engagementUpdate = {
+    const engagementUpdate: any = {
       ...data,
       is_lead: true,
       last_engaged_at: new Date().toISOString()
@@ -23,12 +23,29 @@ export async function POST(request: Request) {
       engagementUpdate.masterclass_accessed = true;
     }
 
+    // Prepare to track distinct VSL unlocks
+    let unlocked = [];
     if (existingUser) {
-      await supabase.auth.admin.updateUserById(existingUser.id, { 
+      unlocked = existingUser.user_metadata?.unlocked_vsls || [];
+    }
+    
+    const videoId = String(data.source);
+    const isNewVsl = videoId && !unlocked.includes(videoId);
+
+    if (isNewVsl) {
+      unlocked.push(videoId);
+      engagementUpdate.unlocked_vsls = unlocked;
+    }
+
+    let targetUserId = "";
+
+    if (existingUser) {
+      targetUserId = existingUser.id;
+      await supabase.auth.admin.updateUserById(targetUserId, { 
         user_metadata: { ...existingUser.user_metadata, ...engagementUpdate } 
       });
     } else {
-      await supabase.auth.admin.createUser({
+      const { data: newUser, error: createErr } = await supabase.auth.admin.createUser({
         email: data.email,
         password: Math.random().toString(36).slice(-10) + "A1!",
         email_confirm: true,
@@ -37,9 +54,34 @@ export async function POST(request: Request) {
           created_via: "progressive_gate"
         }
       });
+      if (createErr) throw createErr;
+      targetUserId = newUser.user.id;
     }
 
-    return NextResponse.json({ success: true });
+    // Award 100 MI Credits if they unlocked a new VSL/Masterclass
+    if (isNewVsl) {
+      const { data: prog } = await supabase
+        .from("user_progress")
+        .select("xp, wallet")
+        .eq("user_id", targetUserId)
+        .maybeSingle();
+
+      if (prog) {
+        await supabase.from("user_progress").update({
+          xp: (prog.xp || 0) + 100,
+          wallet: (prog.wallet || 0) + 100
+        }).eq("user_id", targetUserId);
+      } else {
+        await supabase.from("user_progress").insert({
+          user_id: targetUserId,
+          xp: 100,
+          wallet: 100,
+          streak: 1
+        });
+      }
+    }
+
+    return NextResponse.json({ success: true, awarded: isNewVsl });
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
