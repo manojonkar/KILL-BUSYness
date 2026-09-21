@@ -1,6 +1,7 @@
 ﻿import Link from "next/link";
 import Header from "@/components/Header";
 import ProtectedVideo from "@/components/ProtectedVideo";
+import ProgressiveGate from "@/components/ProgressiveGate";
 
 export const metadata = {
   title: "KILL BUSYness Masterclass",
@@ -19,10 +20,12 @@ export default function MasterclassPage() {
         </div>
 
         <div className="card" style={{ padding: "0", overflow: "hidden", marginBottom: "40px", maxWidth: "900px", margin: "0 auto 40px auto", background: "#000", border: "1px solid #e2e8f0", boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1)" }}>
-          <ProtectedVideo src="/videos/KILL_BUSYness_VSL.mp4" poster="/images/roar-concept.png" />
-          <div style={{ backgroundColor: '#f8fafc', padding: '16px', textAlign: 'center', color: '#64748b', fontSize: '0.85rem', borderTop: '1px solid #e2e8f0' }}>
-            <p>Confidential Executive Masterclass. Downloading and redistribution is strictly prohibited.</p>
-          </div>
+          <ProgressiveGate videoId="masterclass">
+            <ProtectedVideo src="/videos/KILL_BUSYness_VSL.mp4" poster="/images/roar-concept.png" />
+            <div style={{ backgroundColor: '#f8fafc', padding: '16px', textAlign: 'center', color: '#64748b', fontSize: '0.85rem', borderTop: '1px solid #e2e8f0' }}>
+              <p>Confidential Executive Masterclass. Downloading and redistribution is strictly prohibited.</p>
+            </div>
+          </ProgressiveGate>
         </div>
 
         <div className="mobile-stack" style={{ gap: "32px", maxWidth: "1000px", margin: "0 auto", alignItems: "stretch" }}>
