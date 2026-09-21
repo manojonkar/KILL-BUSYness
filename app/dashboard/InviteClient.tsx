@@ -114,19 +114,23 @@ export default function InviteClient({
         });
         const startRow = hasHeaders ? 1 : 0;
 
-        for (let r = startRow; r < data.length; r++) {
-          const row = data[r] as any[];
-          if (!row || row.length === 0) continue;
-          
-          const name = String(row[nameIdx] || "").trim();
-          const email = String(row[emailIdx] || "").trim();
-          const levelVal = levelIdx !== -1 && row[levelIdx] ? String(row[levelIdx]).trim() : "Employee";
-          const level = normalizeLevel(levelVal);
-          
-          if (name && email && email.includes("@")) {
-            lines.push(`${name}, ${email}, ${level}`);
+          for (let r = startRow; r < data.length; r++) {
+            const row = data[r] as any[];
+            if (!row || row.length === 0) continue;
+            
+            const name = String(row[nameIdx] || "").trim();
+            const email = String(row[emailIdx] || "").trim();
+            const levelVal = levelIdx !== -1 && row[levelIdx] ? String(row[levelIdx]).trim() : "";
+            
+            if (name && email && email.includes("@")) {
+              if (levelVal) {
+                const level = normalizeLevel(levelVal);
+                lines.push(`${name}, ${email}, ${level}`);
+              } else {
+                lines.push(`${name}, ${email}`);
+              }
+            }
           }
-        }
 
         if (lines.length === 0) {
           setParsingError("No valid rows containing both Name and Email were found.");
