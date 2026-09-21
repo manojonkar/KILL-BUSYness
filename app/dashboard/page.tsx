@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import Header from "@/components/Header";
 import InviteClient from "./InviteClient";
+import MasterclassInvite from "./MasterclassInvite";
 import { addParticipant, addBulkParticipants, resendInvite, removeParticipant } from "./sendInvite";
 import RegistrationForm from "./RegistrationForm";
 import { createClient } from "@/lib/supabase/server";
@@ -162,6 +163,8 @@ export default async function DashboardPage({ searchParams }: { searchParams: { 
         ) : (
           <InviteClient seats={company.seats} participants={participants} addAction={boundAdd} bulkAction={boundBulk} resendAction={resendInvite} removeAction={removeParticipant} siteUrl={process.env.NEXT_PUBLIC_SITE_URL || "https://www.killbusyness.com"} />
         )}
+
+        <MasterclassInvite />
       </main>
     </>
   );
