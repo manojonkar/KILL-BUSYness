@@ -4,6 +4,7 @@ import Header from "@/components/Header";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { updateOrderStatus } from "./actions";
 import GrantAccessClient from "./grant-access/GrantAccessClient";
+import MasterclassInvite from "@/app/dashboard/MasterclassInvite";
 import { approveStory, removeStory } from "./stories/actions";
 import { computeDimensionScores, overallScore, answersArrayFromRows, type ParticipantAnswers } from "@/lib/scoring";
 import { scoreColor } from "@/lib/suggestions";
@@ -1005,6 +1006,10 @@ export default async function AdminDashboardPage({
                 Give users access to digital products. The system automatically deduplicates existing users.
               </p>
               <GrantAccessClient />
+              
+              <div style={{ marginTop: 40 }}>
+                <MasterclassInvite />
+              </div>
             </div>
           )}
 
