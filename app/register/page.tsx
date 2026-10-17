@@ -16,6 +16,9 @@ export default function RegisterPage({ searchParams }: { searchParams: { error?:
           <p style={{ fontSize: ".82rem", color: "var(--ink-soft)", marginTop: 16 }}>
             Already have an account? <a href="/login" style={{ color: "var(--coral-ink)", fontWeight: 700 }}>Log in</a>
           </p>
+          <p style={{ fontSize: ".82rem", color: "var(--ink-soft)", marginTop: 8 }}>
+            <a href="/forgot" style={{ color: "var(--coral-ink)", fontWeight: 700 }}>Forgot your password?</a>
+          </p>
         </div>
       </main>
     </>

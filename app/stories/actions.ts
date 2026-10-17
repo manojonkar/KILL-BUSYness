@@ -50,7 +50,7 @@ export async function submitStory(formData: FormData) {
       await resend.emails.send({
         from: "KILL BUSYness Portal <admin@killbusyness.com>",
         to: "admin@managementinnovations.co.in",
-        cc: "manoj@managementinnovations.co.in",
+        cc: "Killbusynessteam@gmail.com",
         replyTo: email,
         subject: `New story for approval — ${name}`,
         html:

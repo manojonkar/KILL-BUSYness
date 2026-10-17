@@ -2,21 +2,22 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import Header from "@/components/Header";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
-import { updateOrderStatus } from "./actions";
+import { updateOrderStatus } from './actions';
+import OrderStatusForm from './OrderStatusForm';
 import GrantAccessClient from "./grant-access/GrantAccessClient";
-import MasterclassInvite from "@/app/dashboard/MasterclassInvite";
+import CourierExportButton from "./CourierExportButton";
 import { approveStory, removeStory } from "./stories/actions";
 import { computeDimensionScores, overallScore, answersArrayFromRows, type ParticipantAnswers } from "@/lib/scoring";
 import { scoreColor } from "@/lib/suggestions";
 
 export const dynamic = "force-dynamic";
 
-type Tab = "orders" | "companies" | "surveys" | "users" | "stories" | "reports" | "contact" | "grant-access";
+type Tab = "orders" | "companies" | "surveys" | "users" | "masterclass" | "stories" | "reports" | "contact" | "grant-access" | "access";
 
 export default async function AdminDashboardPage({
   searchParams
 }: {
-  searchParams: { tab?: string; status?: string };
+  searchParams: { tab?: string; status?: string; filter?: string };
 }) {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -55,7 +56,7 @@ export default async function AdminDashboardPage({
       .from("participants")
       .select("*, companies(name)")
       .order("created_at", { ascending: false }),
-    adminClient.auth.admin.listUsers(),
+    adminClient.auth.admin.listUsers({ page: 1, perPage: 1000 }),
     adminClient.from("user_progress").select("*"),
     adminClient.from("user_chapter_reads").select("*"),
     adminClient.from("user_reflections").select("*"),
@@ -84,6 +85,12 @@ export default async function AdminDashboardPage({
   } catch {
     // Fail silently if table does not exist
   }
+
+  const masterclassUsers = (authUsersResult?.data?.users || []).filter(u => 
+    u.user_metadata?.is_masterclass_invitee || u.user_metadata?.masterclass_accessed
+  );
+  const masterclassAccessedCount = masterclassUsers.filter(u => u.user_metadata?.masterclass_accessed).length;
+  const masterclassInvitedCount = masterclassUsers.filter(u => u.user_metadata?.is_masterclass_invitee).length;
 
   // Compile user directory and engagement profiles
   const usersList = (authUsersResult?.data?.users || []).map((u) => {
@@ -258,6 +265,20 @@ export default async function AdminDashboardPage({
             👤 User Activity ({usersList.length})
           </Link>
           <Link
+            href="/admin?tab=masterclass"
+            style={{
+              padding: "10px 18px 8px",
+              textDecoration: "none",
+              fontWeight: 600,
+              fontSize: "0.92rem",
+              color: currentTab === "masterclass" ? "var(--teal-ink, #0f766e)" : "var(--ink-soft)",
+              borderBottom: currentTab === "masterclass" ? "3px solid var(--teal)" : "3px solid transparent",
+              transition: "all 0.15s ease"
+            }}
+          >
+            Masterclass ({masterclassAccessedCount} / {masterclassUsers.length})
+          </Link>
+          <Link
             href="/admin?tab=stories"
             style={{
               padding: "10px 18px 8px",
@@ -312,6 +333,20 @@ export default async function AdminDashboardPage({
             }}
           >
             🗝️ Grant Access
+          </Link>
+          <Link 
+            href="/admin?tab=access"
+            style={{
+              padding: "10px 18px 8px",
+              textDecoration: "none",
+              fontWeight: 600,
+              fontSize: "0.92rem",
+              color: currentTab === "access" ? "var(--teal-ink, #0f766e)" : "var(--ink-soft)",
+              borderBottom: currentTab === "access" ? "3px solid var(--teal)" : "3px solid transparent",
+              transition: "all 0.15s ease"
+            }}
+          >
+            📱 App Access
           </Link>
         </div>
 
@@ -389,38 +424,7 @@ export default async function AdminDashboardPage({
                           <div style={{ fontSize: "0.76rem", color: "var(--ink-soft)", marginTop: 2 }}>{cleanNotes}</div>
                         </td>
                         <td style={{ padding: 12, textAlign: "center" }}>
-                          <form action={updateOrderStatus} style={{ display: "flex", gap: 6, justifyContent: "center", alignItems: "center" }}>
-                            <input type="hidden" name="orderId" value={o.id} />
-                            <select 
-                              name="status" 
-                              defaultValue={o.status}
-                              style={{ 
-                                fontSize: "0.8rem", 
-                                padding: "4px 8px", 
-                                borderRadius: 6, 
-                                border: "1px solid var(--line)",
-                                backgroundColor: o.status === "paid" ? "#ccfbf1" : o.status === "dispatched" ? "#dbeafe" : o.status === "cancelled" ? "#fee2e2" : "#fef3c7",
-                                color: o.status === "paid" ? "#0f766e" : o.status === "dispatched" ? "#1d4ed8" : o.status === "cancelled" ? "#991b1b" : "#d97706",
-                                fontWeight: 700
-                              }}
-                            >
-                              <option value="awaiting_payment">Awaiting Payment</option>
-                              <option value="paid">Paid</option>
-                              <option value="dispatched">Dispatched</option>
-                              <option value="cancelled">Cancelled</option>
-                            </select>
-                            <button 
-                              type="submit" 
-                              className="btn btn-dark btn-sm" 
-                              style={{ 
-                                padding: "5px 10px", 
-                                fontSize: "0.74rem", 
-                                borderRadius: 6 
-                              }}
-                            >
-                              Save
-                            </button>
-                          </form>
+                          <OrderStatusForm order={o} />
                         </td>
                       </tr>
                     );
@@ -434,6 +438,7 @@ export default async function AdminDashboardPage({
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, flexWrap: "wrap", gap: 12 }}>
                   <h3 style={{ margin: 0 }}>Orders Record</h3>
                   <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                    <CourierExportButton orders={displayedOrders} />
                     <Link href="/admin?tab=orders&status=all" className={`btn btn-sm ${currentStatus === "all" ? "btn-dark" : "btn-outline"}`} style={{ borderRadius: 20 }}>
                       All ({regularOrders.length})
                     </Link>
@@ -629,6 +634,63 @@ export default async function AdminDashboardPage({
                     })}
                   </tbody>
                 </table>
+              )}
+            </div>
+          )}
+
+          {/* TAB: Masterclass */}
+          {currentTab === "masterclass" && (
+            <div>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+                <h3 style={{ margin: 0 }}>Masterclass Invites & Engagement</h3>
+                <div style={{ background: "var(--surface)", padding: "8px 16px", borderRadius: 8, fontSize: "0.85rem", fontWeight: 600 }}>
+                  <span style={{ color: "var(--teal-ink)", marginRight: 16 }}>Invited: {masterclassInvitedCount}</span>
+                  <span style={{ color: "#166534" }}>Watched: {masterclassAccessedCount}</span>
+                </div>
+              </div>
+              {masterclassUsers.length === 0 ? (
+                <p style={{ color: "var(--ink-faint)", fontSize: "0.9rem" }}>No users invited yet.</p>
+              ) : (
+                <div style={{ overflowX: "auto" }}>
+                  <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.85rem", textAlign: "left" }}>
+                    <thead>
+                      <tr style={{ borderBottom: "2px solid var(--line)", background: "#f8fafc" }}>
+                        <th style={{ padding: 12 }}>Name</th>
+                        <th style={{ padding: 12 }}>Email</th>
+                        <th style={{ padding: 12 }}>Status</th>
+                        <th style={{ padding: 12 }}>Invited At</th>
+                        <th style={{ padding: 12 }}>Last Sign-in</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {masterclassUsers.map((u) => {
+                        const meta = u.user_metadata || {};
+                        const joined = meta.invited_at ? new Date(meta.invited_at).toLocaleDateString("en-IN", {
+                          day: "2-digit", month: "short", year: "numeric"
+                        }) : "N/A";
+                        const lastLogin = u.last_sign_in_at ? new Date(u.last_sign_in_at).toLocaleDateString("en-IN", {
+                          day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit"
+                        }) : "Never";
+
+                        return (
+                          <tr key={u.id} style={{ borderBottom: "1px solid var(--line)", background: "#fff" }}>
+                            <td style={{ padding: 12, fontWeight: 500 }}>{meta.name || "Unknown"}</td>
+                            <td style={{ padding: 12, color: "var(--ink-soft)" }}>{u.email}</td>
+                            <td style={{ padding: 12 }}>
+                              {meta.masterclass_accessed ? (
+                                <span style={{ background: "#dcfce7", color: "#166534", padding: "4px 8px", borderRadius: 12, fontSize: "0.75rem", fontWeight: 600 }}>Watched</span>
+                              ) : (
+                                <span style={{ background: "#f1f5f9", color: "#64748b", padding: "4px 8px", borderRadius: 12, fontSize: "0.75rem", fontWeight: 600 }}>Invited</span>
+                              )}
+                            </td>
+                            <td style={{ padding: 12, color: "var(--ink-soft)" }}>{joined}</td>
+                            <td style={{ padding: 12, color: "var(--ink-soft)" }}>{lastLogin}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
               )}
             </div>
           )}
@@ -1006,15 +1068,127 @@ export default async function AdminDashboardPage({
                 Give users access to digital products. The system automatically deduplicates existing users.
               </p>
               <GrantAccessClient />
-              
-              <div style={{ marginTop: 40 }}>
-                <MasterclassInvite />
-              </div>
             </div>
           )}
+
+          {/* TAB: App Access */}
+          {currentTab === "access" && (() => {
+            const now = new Date();
+            const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+            const oneMonthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+            const filter = searchParams.filter || "none";
+
+            const usersWithAccess = usersList.map(u => {
+              const t1 = u.lastSignIn ? new Date(u.lastSignIn).getTime() : 0;
+              const t2 = u.lastVisitTime ? new Date(u.lastVisitTime).getTime() : 0;
+              const maxT = Math.max(t1, t2);
+              return { ...u, lastAccessed: maxT > 0 ? new Date(maxT) : null };
+            });
+
+            const todayUsers = usersWithAccess.filter(u => u.lastAccessed && u.lastAccessed >= todayStart);
+            const weekUsers = usersWithAccess.filter(u => u.lastAccessed && u.lastAccessed >= oneWeekAgo);
+            const monthUsers = usersWithAccess.filter(u => u.lastAccessed && u.lastAccessed >= oneMonthAgo);
+
+            let displayedUsers: any[] = [];
+            let tableTitle = "";
+            if (filter === "all") { displayedUsers = usersWithAccess; tableTitle = "All Registered Users"; }
+            if (filter === "month") { displayedUsers = monthUsers; tableTitle = "Users Active Last Month"; }
+            if (filter === "week") { displayedUsers = weekUsers; tableTitle = "Users Active Last Week"; }
+            if (filter === "today") { displayedUsers = todayUsers; tableTitle = "Users Active Today"; }
+
+            // Sort by most recently accessed
+            displayedUsers.sort((a, b) => {
+              const tA = a.lastAccessed ? a.lastAccessed.getTime() : 0;
+              const tB = b.lastAccessed ? b.lastAccessed.getTime() : 0;
+              return tB - tA;
+            });
+
+            return (
+              <div>
+                <h3 style={{ marginBottom: 16 }}>App Access Analytics</h3>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 16, marginBottom: 24 }}>
+                  <Link href="/admin?tab=access&filter=all" style={{ textDecoration: "none" }}>
+                    <div className="card mini-card" style={{ padding: "20px 24px", background: filter === "all" ? "#f1f5f9" : "#f8fafc", border: filter === "all" ? "2px solid var(--teal)" : "1px solid var(--line)", cursor: "pointer", height: "100%" }}>
+                      <span className="eyebrow" style={{ color: "var(--ink-soft)" }}>Total Registered</span>
+                      <h3 style={{ fontSize: "2.4rem", margin: "6px 0 2px", color: "var(--ink)" }}>{usersWithAccess.length}</h3>
+                    </div>
+                  </Link>
+                  <Link href="/admin?tab=access&filter=month" style={{ textDecoration: "none" }}>
+                    <div className="card mini-card" style={{ padding: "20px 24px", background: filter === "month" ? "#f1f5f9" : "#f8fafc", border: filter === "month" ? "2px solid var(--teal)" : "1px solid var(--line)", cursor: "pointer", height: "100%" }}>
+                      <span className="eyebrow" style={{ color: "var(--ink-soft)" }}>Accessed Last Month</span>
+                      <h3 style={{ fontSize: "2.4rem", margin: "6px 0 2px", color: "var(--ink)" }}>{monthUsers.length}</h3>
+                    </div>
+                  </Link>
+                  <Link href="/admin?tab=access&filter=week" style={{ textDecoration: "none" }}>
+                    <div className="card mini-card" style={{ padding: "20px 24px", background: filter === "week" ? "#f1f5f9" : "#f8fafc", border: filter === "week" ? "2px solid var(--teal)" : "1px solid var(--line)", cursor: "pointer", height: "100%" }}>
+                      <span className="eyebrow" style={{ color: "var(--ink-soft)" }}>Accessed Last Week</span>
+                      <h3 style={{ fontSize: "2.4rem", margin: "6px 0 2px", color: "var(--ink)" }}>{weekUsers.length}</h3>
+                    </div>
+                  </Link>
+                  <Link href="/admin?tab=access&filter=today" style={{ textDecoration: "none" }}>
+                    <div className="card mini-card" style={{ padding: "20px 24px", background: filter === "today" ? "#ccfbf1" : "#f8fafc", border: filter === "today" ? "2px solid var(--teal-ink, #0f766e)" : "1px solid var(--line)", cursor: "pointer", height: "100%" }}>
+                      <span className="eyebrow" style={{ color: "var(--ink-soft)" }}>Accessed Today</span>
+                      <h3 style={{ fontSize: "2.4rem", margin: "6px 0 2px", color: "var(--teal-ink, #0f766e)" }}>{todayUsers.length}</h3>
+                    </div>
+                  </Link>
+                </div>
+
+                {filter !== "none" && (
+                  <div style={{ marginTop: 32 }}>
+                    <h3 style={{ marginBottom: 16 }}>{tableTitle} ({displayedUsers.length})</h3>
+                    <div style={{ overflowX: "auto" }}>
+                      <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.85rem", textAlign: "left" }}>
+                        <thead>
+                          <tr style={{ borderBottom: "2px solid var(--line)", background: "#f8fafc" }}>
+                            <th style={{ padding: 12 }}>Name</th>
+                            <th style={{ padding: 12 }}>Contact Details</th>
+                            <th style={{ padding: 12 }}>Registered Date</th>
+                            <th style={{ padding: 12 }}>Last Accessed</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {displayedUsers.map((u) => {
+                            const joined = new Date(u.createdAt).toLocaleDateString("en-IN", {
+                              day: "2-digit", month: "short", year: "numeric"
+                            });
+                            const lastAccessStr = u.lastAccessed 
+                              ? u.lastAccessed.toLocaleString("en-IN", {
+                                  day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit"
+                                })
+                              : "Never";
+
+                            return (
+                              <tr key={u.id} style={{ borderBottom: "1px solid var(--line)" }}>
+                                <td style={{ padding: 12, fontWeight: "bold" }}>{u.name}</td>
+                                <td style={{ padding: 12 }}>
+                                  <a href={`mailto:${u.email}`} style={{ color: "var(--teal-ink, #0f766e)", textDecoration: "none" }}>{u.email}</a>
+                                </td>
+                                <td style={{ padding: 12, color: "var(--ink-soft)" }}>{joined}</td>
+                                <td style={{ padding: 12, color: "var(--ink-soft)" }}>{lastAccessStr}</td>
+                              </tr>
+                            );
+                          })}
+                          {displayedUsers.length === 0 && (
+                            <tr>
+                              <td colSpan={4} style={{ padding: 24, textAlign: "center", color: "var(--ink-faint)" }}>
+                                No users found in this category.
+                              </td>
+                            </tr>
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
 
         </div>
       </main>
     </>
   );
 }
+

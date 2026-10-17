@@ -28,7 +28,7 @@ export async function sendContactMessage(formData: FormData) {
       await resend.emails.send({
         from: "KILL BUSYness Portal <admin@killbusyness.com>",
         to: "manoj@managementinnovations.co.in",
-        cc: "manoj@managementinnovations.co.in",
+        cc: "Killbusynessteam@gmail.com",
         replyTo: email,
         subject: `KILL BUSYness — Message from ${name}`,
         html:

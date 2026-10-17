@@ -1,10 +1,12 @@
 "use client";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { registerAccount } from "./actions";
 
 export default function RegisterForm({ initialError }: { initialError?: string }) {
   const [error, setError] = useState(initialError || "");
   const [loading, setLoading] = useState(false);
+  const router = useRouter();
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -16,6 +18,8 @@ export default function RegisterForm({ initialError }: { initialError?: string }
       if (res && "error" in res && res.error) {
         setError(res.error);
         setLoading(false);
+      } else if (res && "redirect" in res && res.redirect) {
+        router.push(res.redirect);
       }
     } catch (err: any) {
       setError("An unexpected error occurred. Please try again.");

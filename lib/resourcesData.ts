@@ -99,4 +99,55 @@ export const resourcesData = [
     "title": "Success OR Successful (Ongoing Success)",
     "videoUrl": "/resources/videos/VSL_20.mp4"
   }
+,
+  {
+    "id": 21,
+    "title": "The BUSYness Mirror Reflects Mount Neverest",
+    "videoUrl": "/resources/videos/VSL_21.mp4"
+  },
+  {
+    "id": 22,
+    "title": "Regenerative NFR (No Follow-Up Required)",
+    "videoUrl": "/resources/videos/VSL_22.mp4"
+  },
+  {
+    "id": 23,
+    "title": "The 3 Silences of the Management Blind Spot",
+    "videoUrl": "/resources/videos/VSL_23.mp4"
+  },
+  {
+    "id": 24,
+    "title": "The KASH Standard for NFR",
+    "videoUrl": "/resources/videos/VSL_24.mp4"
+  },
+  {
+    "id": 25,
+    "title": "Escaping the Extractive Century with ROAR",
+    "videoUrl": "/resources/videos/VSL_25.mp4"
+  },
+  {
+    "id": 26,
+    "title": "The Anatomy of a High-Performance Decision",
+    "videoUrl": "/resources/videos/VSL_26.mp4"
+  },
+  {
+    "id": 27,
+    "title": "From Hierarchy to Co-Creative Networks",
+    "videoUrl": "/resources/videos/VSL_27.mp4"
+  },
+  {
+    "id": 28,
+    "title": "Silence of the Soul & The Purpose Deficit",
+    "videoUrl": "/resources/videos/VSL_28.mp4"
+  },
+  {
+    "id": 29,
+    "title": "Killing BUSYness with Radical Simplification",
+    "videoUrl": "/resources/videos/VSL_29.mp4"
+  },
+  {
+    "id": 30,
+    "title": "The Architecture of Ongoing Success",
+    "videoUrl": "/resources/videos/VSL_30.mp4"
+  }
 ];

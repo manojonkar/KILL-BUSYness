@@ -149,11 +149,29 @@ export async function placeOrder(formData: FormData) {
   if (key) {
     const resend = new Resend(key);
     try {
+      // Send to Customer
       await resend.emails.send({
         from: "KILL BUSYness <hello@killbusyness.com>",
         to: email,
         subject: `Your Order Reference: ${ref}`,
         html: `<p>Hi ${name},</p><p>You ordered ${quantity}x <strong>${fmt.label}</strong>.</p><p>Your reference is <strong>${ref}</strong>.</p><p>Amount to pay: ${isInternational ? 'US$' : 'Rs'} ${finalPrice}</p><p>Please complete payment by ${isInternational ? 'Razorpay' : 'UPI'} if you haven't already.</p>`
+      });
+      
+      // Send Instant Alert to Manoj
+      await resend.emails.send({
+        from: "KILL BUSYness System <admin@killbusyness.com>",
+        to: "manoj@managementinnovations.co.in",
+        subject: `NEW ORDER ALERT: ${quantity}x ${fmt.label}`,
+        html: `<h2>New Order Received!</h2>
+        <p><strong>Customer:</strong> ${name} (${email})</p>
+        <p><strong>Phone:</strong> ${phone}</p>
+        <p><strong>Format:</strong> ${fmt.label}</p>
+        <p><strong>Quantity:</strong> ${quantity}</p>
+        <p><strong>Total:</strong> ${isInternational ? 'US$' : 'Rs'} ${finalPrice}</p>
+        <p><strong>Address:</strong> ${fmt.physical ? `${fullAddress}, ${city}, ${state || ''} ${pincode}` : 'N/A'}</p>
+        <p><strong>Order Ref:</strong> ${ref}</p>
+        <hr/>
+        <p>Please log in to the admin portal to manage this order.</p>`
       });
     } catch (e) {}
   }

@@ -470,5 +470,125 @@ export const QUIZZES: Record<number, Quiz> = {
         correctAnswer: 2
       }
     ]
+  },
+  9: {
+    chapterId: 9,
+    questions: [
+      {
+        id: 1,
+        text: "What is the primary goal of the 'Run' move in the ROAR framework?",
+        options: [
+          "To quickly finish outstanding tasks so leaders can take a break.",
+          "To institutionalize high performance through world-class execution.",
+          "To run away from difficult operational challenges and outsource them.",
+          "To increase the speed at which employees type and process emails."
+        ],
+        correctAnswer: 1
+      },
+      {
+        id: 2,
+        text: "Why is execution often considered the hardest part of organizational change?",
+        options: [
+          "Because creating the initial strategy is usually much more expensive.",
+          "Because execution requires sustained discipline long after the initial excitement fades.",
+          "Because competitors can easily steal and copy your internal execution plans.",
+          "Because most employees simply refuse to follow any new directions."
+        ],
+        correctAnswer: 1
+      },
+      {
+        id: 3,
+        text: "In the 'Build' phase, how should processes be treated?",
+        options: [
+          "As rigid rules that must never be questioned or altered under any circumstances.",
+          "As living systems that must be continuously evaluated and improved.",
+          "As temporary suggestions until everyone figures out their own preferred way of working.",
+          "As completely unnecessary hurdles that slow down true high performers."
+        ],
+        correctAnswer: 1
+      },
+      {
+        id: 4,
+        text: "What happens when an organization fails to institutionalize its new standards?",
+        options: [
+          "The organization inevitably and rapidly slides back into its old habits of BUSYness.",
+          "The organization automatically becomes a market leader due to increased agility.",
+          "The employees will naturally enforce the new standards on their own without leadership.",
+          "The board of directors will immediately take over daily operations."
+        ],
+        correctAnswer: 0
+      },
+      {
+        id: 5,
+        text: "How does a High-Performance organization measure successful execution?",
+        options: [
+          "By counting the total number of hours everyone spent in the office.",
+          "By the sheer volume of emails and messages sent during the week.",
+          "By tracking actual progress against key outcomes and making data-driven adjustments.",
+          "By how exhausted and stressed the team feels at the end of the financial quarter."
+        ],
+        correctAnswer: 2
+      }
+    ]
+  },
+  10: {
+    chapterId: 10,
+    questions: [
+      {
+        id: 1,
+        text: "According to Chapter 10, how should high performance be viewed?",
+        options: [
+          "As a final destination that you reach and never have to worry about again.",
+          "As a temporary phase that eventually ends when the market changes.",
+          "As a continuous, daily discipline that requires ongoing leadership commitment.",
+          "As an inherent genetic trait that organizations either have or don't have."
+        ],
+        correctAnswer: 2
+      },
+      {
+        id: 2,
+        text: "What is the biggest threat to sustaining greatness in an organization?",
+        options: [
+          "Unexpected actions taken by small, agile startup competitors.",
+          "Complacency and the gravitational pull back toward comfortable BUSYness.",
+          "A sudden lack of available venture capital funding in the market.",
+          "Hiring too many highly skilled industry experts too quickly."
+        ],
+        correctAnswer: 1
+      },
+      {
+        id: 3,
+        text: "How must a leader behave to ensure greatness is sustained over time?",
+        options: [
+          "They must step back entirely and let the culture manage itself without interference.",
+          "They must constantly remain the Chief Reminding Officer of the organization's standards.",
+          "They must rapidly change the core values every quarter to keep things fresh.",
+          "They must focus exclusively on external PR and ignore internal operations."
+        ],
+        correctAnswer: 1
+      },
+      {
+        id: 4,
+        text: "When a team achieves a major success, what is the High-Performance approach to the 'next step'?",
+        options: [
+          "Celebrate briefly, then immediately ask 'How do we raise the standard again?'.",
+          "Coast on the victory for several years without changing the product.",
+          "Fire the bottom performers since the top performers can now carry the load.",
+          "Completely pivot into a brand new industry to chase a bigger challenge."
+        ],
+        correctAnswer: 0
+      },
+      {
+        id: 5,
+        text: "What is the ultimate mark of a truly transformed, high-performance organization?",
+        options: [
+          "It never experiences any problems, conflicts, or market challenges.",
+          "It has the highest employee turnover rate because of its intense standards.",
+          "It self-corrects and holds itself accountable even when the CEO is not in the room.",
+          "It relies entirely on external consultants to solve its daily operational issues."
+        ],
+        correctAnswer: 2
+      }
+    ]
   }
 };

@@ -19,7 +19,7 @@ export async function sendInviteEmail(toEmail: string, participantName: string, 
     await resend.emails.send({
       from: "KILL BUSYness Portal <admin@killbusyness.com>",
       to: toEmail,
-      cc: "manoj@managementinnovations.co.in",
+      cc: "Killbusynessteam@gmail.com",
       subject: "Invitation to KILL BUSYness Organization Audit",
       html: `<p>Hi ${participantName || "there"},</p><p><strong>${companyName}</strong> has invited you to take part in the KILL BUSYness Organization Audit - a short, confidential diagnostic of how your organization really runs.</p><p><a href="${siteUrl}/survey/${token}">Start the survey</a></p><p>It takes about 10 minutes and is completely confidential.</p>`
     });

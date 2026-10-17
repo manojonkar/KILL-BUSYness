@@ -1,10 +1,10 @@
 "use client";
 import { useState } from "react";
-import { grantSingleAccess, grantBulkAccess } from "./actions";
+import { grantSingleAccess, grantBulkAccess, resendAccessEmail } from "./actions";
 
 export default function GrantAccessClient() {
   const [tab, setTab] = useState<"single" | "bulk">("single");
-  const [formats, setFormats] = useState<string[]>(["ebook", "audiobook"]);
+  const [formats, setFormats] = useState<string[]>(["ebook", "audiobook", "masterclass"]);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ text: "", type: "" });
 
@@ -34,6 +34,22 @@ export default function GrantAccessClient() {
       setMessage({ text: res.message || `Successfully granted access to ${email}!`, type: "success" });
       (e.target as HTMLFormElement).reset();
     }
+  };
+
+  const handleResend = async (form: HTMLFormElement | null) => {
+    if (!form) return;
+    const formData = new FormData(form);
+    const name = formData.get("name")?.toString() || "";
+    const email = formData.get("email")?.toString() || "";
+    if (!name || !email) {
+      setMessage({ text: "Enter name and email first.", type: "error" });
+      return;
+    }
+    setLoading(true);
+    setMessage({ text: "", type: "" });
+    const res: any = await resendAccessEmail(name, email, formats);
+    setLoading(false);
+    setMessage(res?.error ? { text: res.error, type: "error" } : { text: res.message, type: "success" });
   };
 
   const handleBulk = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -95,6 +111,24 @@ export default function GrantAccessClient() {
             />
             AudioBook
           </label>
+          <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", fontWeight: 600 }}>
+            <input 
+              type="checkbox" 
+              checked={formats.includes("masterclass")} 
+              onChange={() => toggleFormat("masterclass")}
+              style={{ width: 18, height: 18 }}
+            />
+            High-Performance Masterclass
+          </label>
+          <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", fontWeight: 600 }}>
+            <input 
+              type="checkbox" 
+              checked={formats.includes("app")} 
+              onChange={() => toggleFormat("app")}
+              style={{ width: 18, height: 18 }}
+            />
+            KILL BUSYness App (Beta)
+          </label>
         </div>
       </div>
 
@@ -134,6 +168,9 @@ export default function GrantAccessClient() {
           </div>
           <button type="submit" className="btn btn-teal" disabled={loading} style={{ justifyContent: "center", marginTop: 8 }}>
             {loading ? "Processing..." : "Grant Access & Send Email"}
+          </button>
+          <button type="button" className="btn" disabled={loading} onClick={(e) => handleResend(e.currentTarget.form)} style={{ justifyContent: "center", border: "1px solid #0E9C74", color: "#0E9C74", background: "#fff" }}>
+            Re-send Email Only (already granted)
           </button>
         </form>
       )}

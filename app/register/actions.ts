@@ -14,6 +14,9 @@ export async function registerAccount(formData: FormData) {
     options: { data: { name } }
   });
   if (error) {
+    if (error.message.includes("User already registered") || error.message.includes("already registered")) {
+      return { error: "This email is already securely registered for early access. Please click 'Forgot Password' below to set your password and log in." };
+    }
     return { error: error.message };
   }
 
@@ -32,7 +35,7 @@ export async function registerAccount(formData: FormData) {
   }
 
   if (data.session) {
-    redirect("/dashboard");
+    return { redirect: "/dashboard" };
   }
-  redirect("/login?error=" + encodeURIComponent("Check your email to confirm your account, then log in."));
+  return { redirect: "/login?message=" + encodeURIComponent("Registration successful! Please check your email to validate your account.") };
 }
