@@ -38,16 +38,24 @@ export async function sendPortalEmail(options: EmailOptions): Promise<EmailResul
   }
 
   const toList = Array.isArray(options.to) ? options.to : [options.to];
-  const defaultCc = ["Killbusynessteam@gmail.com"];
-  const ccList = options.cc 
+  
+  // Rule: Killbusynessteam@gmail.com is ALWAYS CC'd on every portal email,
+  // unless the email is sent directly to the team inbox itself.
+  const requiredCc = "Killbusynessteam@gmail.com";
+  const userCc = options.cc 
     ? (Array.isArray(options.cc) ? options.cc : [options.cc]) 
-    : defaultCc;
+    : [];
+  const combinedCc = Array.from(new Set([...userCc, requiredCc]))
+    .filter(email => !toList.some(to => to.toLowerCase() === email.toLowerCase()));
+  const ccList = combinedCc;
 
   // --- ATTEMPT 1: BREVO (FIRST PRIORITY) ---
   if (brevoApiKey) {
     try {
+      // In Brevo, the verified sender address is admin@managementinnovations.co.in
+      const brevoSenderEmail = "admin@managementinnovations.co.in";
       const payload: any = {
-        sender: { name: senderName, email: senderEmail },
+        sender: { name: senderName, email: brevoSenderEmail },
         to: toList.map(email => ({ email })),
         subject: options.subject,
         htmlContent: options.html,
@@ -90,8 +98,9 @@ export async function sendPortalEmail(options: EmailOptions): Promise<EmailResul
   }
 
   try {
+    const resendSender = `${senderName} <admin@killbusyness.com>`;
     const resendPayload: any = {
-      from: fromStr,
+      from: resendSender,
       to: toList,
       subject: options.subject,
       html: options.html,
