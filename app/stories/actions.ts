@@ -3,7 +3,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { evaluateBadges } from "@/lib/gamification";
-import { Resend } from "resend";
+import { sendPortalEmail } from "@/lib/email";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 const PHONE_RE = /^[0-9+()\-\s]{7,20}$/;
@@ -42,28 +42,23 @@ export async function submitStory(formData: FormData) {
 
   await evaluateBadges(supabase, user.id);
 
-  const key = process.env.RESEND_API_KEY;
-  if (key) {
-    try {
-      const resend = new Resend(key);
-      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.killbusyness.com";
-      await resend.emails.send({
-        from: "KILL BUSYness Portal <admin@killbusyness.com>",
-        to: "admin@managementinnovations.co.in",
-        cc: "Killbusynessteam@gmail.com",
-        replyTo: email,
-        subject: `New story for approval — ${name}`,
-        html:
-          `<p><strong>${name}</strong>${role ? ` — ${role}` : ""} submitted a story for the public wall.</p>` +
-          `<p><strong>Email:</strong> ${email}<br/><strong>Phone:</strong> ${phone || "not given"}<br/>` +
-          `<strong>Account:</strong> ${user.email}</p>` +
-          `<blockquote style="border-left:3px solid #9B2226;padding-left:12px;color:#333">${body.replace(/\n/g, "<br/>")}</blockquote>` +
-          `<p>It is <strong>not</strong> public yet. Approve or delete it here:<br/>` +
-          `<a href="${siteUrl}/admin/stories">${siteUrl}/admin/stories</a></p>`
-      });
-    } catch {
-    }
-  }
+  try {
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.killbusyness.com";
+    await sendPortalEmail({
+      from: "KILL BUSYness Portal <admin@killbusyness.com>",
+      to: "admin@managementinnovations.co.in",
+      cc: "Killbusynessteam@gmail.com",
+      replyTo: email,
+      subject: `New story for approval — ${name}`,
+      html:
+        `<p><strong>${name}</strong>${role ? ` — ${role}` : ""} submitted a story for the public wall.</p>` +
+        `<p><strong>Email:</strong> ${email}<br/><strong>Phone:</strong> ${phone || "not given"}<br/>` +
+        `<strong>Account:</strong> ${user.email}</p>` +
+        `<blockquote style="border-left:3px solid #9B2226;padding-left:12px;color:#333">${body.replace(/\n/g, "<br/>")}</blockquote>` +
+        `<p>It is <strong>not</strong> public yet. Approve or delete it here:<br/>` +
+        `<a href="${siteUrl}/admin/stories">${siteUrl}/admin/stories</a></p>`
+    });
+  } catch {}
 
   revalidatePath("/stories");
   return { success: true };

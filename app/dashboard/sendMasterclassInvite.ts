@@ -1,11 +1,8 @@
 "use server";
-import { Resend } from "resend";
+import { sendPortalEmail } from "@/lib/email";
 import { createAdminClient } from "@/lib/supabase/server";
 
 export async function sendMasterclassInvite(formData: FormData) {
-  const resendApiKey = process.env.RESEND_API_KEY;
-  if (!resendApiKey) throw new Error("RESEND_API_KEY missing");
-  const resend = new Resend(resendApiKey);
   const supabase = createAdminClient();
   
   const name = formData.get("name")?.toString();
@@ -37,7 +34,7 @@ export async function sendMasterclassInvite(formData: FormData) {
     });
   }
 
-  await resend.emails.send({
+  await sendPortalEmail({
     from: "Manoj Onkar <admin@killbusyness.com>",
     to: email,
     cc: "Killbusynessteam@gmail.com",

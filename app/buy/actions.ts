@@ -2,7 +2,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { FORMATS, PROMO_CODES } from "@/lib/book";
-import { Resend } from "resend";
+import { sendPortalEmail } from "@/lib/email";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
@@ -145,38 +145,34 @@ export async function placeOrder(formData: FormData) {
 
   if (error) return fail(`We couldn't record your order just then. Please try again. (${error.message})`);
 
-  const key = process.env.RESEND_API_KEY;
-  if (key) {
-    const resend = new Resend(key);
-    try {
-      // Send to Customer
-      await resend.emails.send({
-        from: "KILL BUSYness <hello@killbusyness.com>",
-        to: email,
-        cc: "Killbusynessteam@gmail.com",
-        subject: `Your Order Reference: ${ref}`,
-        html: `<p>Hi ${name},</p><p>You ordered ${quantity}x <strong>${fmt.label}</strong>.</p><p>Your reference is <strong>${ref}</strong>.</p><p>Amount to pay: ${isInternational ? 'US$' : 'Rs'} ${finalPrice}</p><p>Please complete payment by ${isInternational ? 'Razorpay' : 'UPI'} if you haven't already.</p>`
-      });
-      
-      // Send Instant Alert to Manoj
-      await resend.emails.send({
-        from: "KILL BUSYness System <admin@killbusyness.com>",
-        to: "manoj@managementinnovations.co.in",
-        cc: "Killbusynessteam@gmail.com",
-        subject: `NEW ORDER ALERT: ${quantity}x ${fmt.label}`,
-        html: `<h2>New Order Received!</h2>
-        <p><strong>Customer:</strong> ${name} (${email})</p>
-        <p><strong>Phone:</strong> ${phone}</p>
-        <p><strong>Format:</strong> ${fmt.label}</p>
-        <p><strong>Quantity:</strong> ${quantity}</p>
-        <p><strong>Total:</strong> ${isInternational ? 'US$' : 'Rs'} ${finalPrice}</p>
-        <p><strong>Address:</strong> ${fmt.physical ? `${fullAddress}, ${city}, ${state || ''} ${pincode}` : 'N/A'}</p>
-        <p><strong>Order Ref:</strong> ${ref}</p>
-        <hr/>
-        <p>Please log in to the admin portal to manage this order.</p>`
-      });
-    } catch (e) {}
-  }
+  try {
+    // Send to Customer
+    await sendPortalEmail({
+      from: "KILL BUSYness <hello@killbusyness.com>",
+      to: email,
+      cc: "Killbusynessteam@gmail.com",
+      subject: `Your Order Reference: ${ref}`,
+      html: `<p>Hi ${name},</p><p>You ordered ${quantity}x <strong>${fmt.label}</strong>.</p><p>Your reference is <strong>${ref}</strong>.</p><p>Amount to pay: ${isInternational ? 'US$' : 'Rs'} ${finalPrice}</p><p>Please complete payment by ${isInternational ? 'Razorpay' : 'UPI'} if you haven't already.</p>`
+    });
+    
+    // Send Instant Alert to Manoj
+    await sendPortalEmail({
+      from: "KILL BUSYness System <admin@killbusyness.com>",
+      to: "manoj@managementinnovations.co.in",
+      cc: "Killbusynessteam@gmail.com",
+      subject: `NEW ORDER ALERT: ${quantity}x ${fmt.label}`,
+      html: `<h2>New Order Received!</h2>
+      <p><strong>Customer:</strong> ${name} (${email})</p>
+      <p><strong>Phone:</strong> ${phone}</p>
+      <p><strong>Format:</strong> ${fmt.label}</p>
+      <p><strong>Quantity:</strong> ${quantity}</p>
+      <p><strong>Total:</strong> ${isInternational ? 'US$' : 'Rs'} ${finalPrice}</p>
+      <p><strong>Address:</strong> ${fmt.physical ? `${fullAddress}, ${city}, ${state || ''} ${pincode}` : 'N/A'}</p>
+      <p><strong>Order Ref:</strong> ${ref}</p>
+      <hr/>
+      <p>Please log in to the admin portal to manage this order.</p>`
+    });
+  } catch (e) {}
 
   redirect(`/buy?format=${fmt.key}&ref=${ref}${isInternational ? '&intl=true' : ''}`);
 }

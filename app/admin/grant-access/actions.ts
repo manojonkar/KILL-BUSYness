@@ -1,6 +1,6 @@
 "use server";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
-import { Resend } from "resend";
+import { sendPortalEmail } from "@/lib/email";
 
 async function verifyAdmin() {
   const supabase = createClient();
@@ -56,12 +56,6 @@ async function buildSecureRecoveryLink(email: string): Promise<string> {
 }
 
 async function sendWelcomeEmail(name: string, email: string, formats: string[]) {
-  const resendKey = process.env.RESEND_API_KEY;
-  if (!resendKey) {
-    console.error('[GrantAccess] RESEND_API_KEY is missing – welcome email will not be sent');
-    return;
-  }
-
   let formatList = [];
   if (formats.includes("ebook")) formatList.push("the Digital eBook");
   if (formats.includes("audiobook")) formatList.push("the full AudioBook");
@@ -80,88 +74,74 @@ async function sendWelcomeEmail(name: string, email: string, formats: string[]) 
   // Generate a magic link so they don't get a "User already registered" error
   const magicLink = await buildSecureRecoveryLink(email);
 
-  await checkedFetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: { "Authorization": `Bearer ${resendKey}`, "Content-Type": "application/json" },
-    body: JSON.stringify({
-      from: "Team KILL BUSYness <admin@killbusyness.com>",
-      to: email,
-      cc: "Killbusynessteam@gmail.com",
-      reply_to: "admin@managementinnovations.co.in",
-      subject: "Your Exclusive Access to KILL BUSYness is Ready!",
-      html: `
-        <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; color: #15171b;">
-          <h2 style="color: #0E9C74;">Welcome, ${name}!</h2>
-          <p>Thank you for your interest in KILL BUSYness! We have securely unlocked your free digital access on our private portal.</p>
-          <p>You have been granted full access to: <strong>${formatText}</strong>.</p>
-          <p>Since your account has already been securely generated in the background, you do not need to register. Simply click the secure access link below to instantly log in and set a password of your choice:</p>
-          <div style="margin: 24px 0;">
-            <a href="${magicLink}" style="display: inline-block; padding: 12px 24px; background: #0E9C74; color: #fff; text-decoration: none; border-radius: 8px; font-weight: bold; margin-right: 12px;">Secure Auto-Login & Set Password</a>
-          </div>
-          <p>If the link above expires, you can always request a new one by going to <a href="${BASE_URL}/forgot">${BASE_URL}/forgot</a>.</p>
-          <p>Welcome to the journey to build a High Performance Organization!</p>
-          <p style="color: #64748b; font-size: 0.9em;">- Manoj Onkar</p>
+  await sendPortalEmail({
+    from: "Team KILL BUSYness <admin@killbusyness.com>",
+    to: email,
+    cc: "Killbusynessteam@gmail.com",
+    replyTo: "admin@managementinnovations.co.in",
+    subject: "Your Exclusive Access to KILL BUSYness is Ready!",
+    html: `
+      <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; color: #15171b;">
+        <h2 style="color: #0E9C74;">Welcome, ${name}!</h2>
+        <p>Thank you for your interest in KILL BUSYness! We have securely unlocked your free digital access on our private portal.</p>
+        <p>You have been granted full access to: <strong>${formatText}</strong>.</p>
+        <p>Since your account has already been securely generated in the background, you do not need to register. Simply click the secure access link below to instantly log in and set a password of your choice:</p>
+        <div style="margin: 24px 0;">
+          <a href="${magicLink}" style="display: inline-block; padding: 12px 24px; background: #0E9C74; color: #fff; text-decoration: none; border-radius: 8px; font-weight: bold; margin-right: 12px;">Secure Auto-Login & Set Password</a>
         </div>
-      `
-    })
+        <p>If the link above expires, you can always request a new one by going to <a href="${BASE_URL}/forgot">${BASE_URL}/forgot</a>.</p>
+        <p>Welcome to the journey to build a High Performance Organization!</p>
+        <p style="color: #64748b; font-size: 0.9em;">- Manoj Onkar</p>
+      </div>
+    `
   });
 }
 
 async function sendAppInviteEmail(name: string, email: string) {
-  const resendKey = process.env.RESEND_API_KEY;
-  if (!resendKey) {
-    console.error('[GrantAccess] RESEND_API_KEY is missing – app invite email will not be sent');
-    return;
-  }
-
   const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://www.killbusyness.com";
   
   const magicLink = await buildSecureRecoveryLink(email);
 
-  await checkedFetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: { "Authorization": `Bearer ${resendKey}`, "Content-Type": "application/json" },
-    body: JSON.stringify({
-      from: "Team KILL BUSYness <admin@killbusyness.com>",
-      to: email,
-      cc: "Killbusynessteam@gmail.com",
-      reply_to: "admin@managementinnovations.co.in",
-      subject: "Invitation: Help shape the future of the KILL BUSYness app (Beta)",
-      html: `
-        <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; color: #15171b; line-height: 1.6;">
-          <p>Hi ${name || "there"},</p>
-          <p>We are reaching out because we value your perspective as a leader.</p>
-          <p>For years, our team at Management Innovations has watched brilliant executives get trapped in the "Extractive Century" model—confusing motion with progress, and endless busyness with actual business outcomes. That’s exactly why Manoj Onkar wrote <em>KILL BUSYness</em>.</p>
-          <p>But reading a book is only step one. Changing organizational behavior requires daily, in-the-moment reinforcement.</p>
-          <p>That’s why our team has been secretly building the <strong>KILL BUSYness App</strong>—a bite-sized, gamified learning companion designed to help leaders instantly shift from activities to outcomes. And before we launch it to the public, we want you to be one of the very first to test the Beta version.</p>
-          
-          <h3 style="color: #0E9C74; margin-top: 24px;">What you'll find inside:</h3>
-          <ul style="padding-left: 20px;">
-            <li style="margin-bottom: 10px;"><strong>2-Minute Micro-Modules:</strong> The entire <em>KILL BUSYness</em> methodology broken down into actionable, bite-sized lessons with built-in audio.</li>
-            <li style="margin-bottom: 10px;"><strong>The AI OD Coach:</strong> We've trained a dedicated AI engine on Manoj's exact organizational development frameworks. It acts as an on-demand consultant to help you navigate your current team dilemmas.</li>
-            <li style="margin-bottom: 10px;"><strong>Reflection & Gamification:</strong> Earn "MI Credits" for completing modules and reflecting on how to apply them to your workspace.</li>
-          </ul>
-          
-          <h3 style="color: #0E9C74; margin-top: 24px;">Our ask of you:</h3>
-          <p>We’re not looking for praise; we’re looking for friction. We want you to log in, test the interface, and try to stump the AI Coach with your hardest leadership challenges.</p>
-          <ol style="padding-left: 20px;">
-            <li style="margin-bottom: 10px;">
-              <strong>Access the Beta here:</strong><br/>
-              Since your secure account has already been generated, simply click the secure access link below to instantly log in and set a password:<br/>
-              <a href="${magicLink}" style="display: inline-block; margin-top: 8px; padding: 10px 20px; background: #0E9C74; color: #fff; text-decoration: none; border-radius: 6px; font-weight: bold;">Secure Auto-Login & Set Password</a>
-            </li>
-            <li style="margin-bottom: 10px;"><strong>Download the App:</strong> For the best experience, install the app directly to your phone or desktop. Open the link in Chrome or Safari, tap the Share/Menu icon, and select <strong>"Add to Home Screen"</strong> (or "Install App" on desktop).</li>
-            <li style="margin-bottom: 10px;"><strong>Give Feedback:</strong> Use the thumbs up/down buttons inside the AI Coach, or click the "Email KILL BUSYness Team" button to tell us exactly what works, what doesn't, and what you'd like to see added.</li>
-          </ol>
-          
-          <p>Your insights will directly shape the final version of this platform.</p>
-          <p>Thank you for your time, your leadership, and your feedback. Let's kill busyness together.</p>
-          <p><em>Note: Please send any direct replies or questions to Manoj@managementinnovations.co.in</em></p>
-          
-          <p style="margin-top: 30px;">Best regards,<br/><br/><strong>Team KILL BUSYness</strong><br/>Management Innovations</p>
-        </div>
-      `
-    })
+  await sendPortalEmail({
+    from: "Team KILL BUSYness <admin@killbusyness.com>",
+    to: email,
+    cc: "Killbusynessteam@gmail.com",
+    replyTo: "admin@managementinnovations.co.in",
+    subject: "Invitation: Help shape the future of the KILL BUSYness app (Beta)",
+    html: `
+      <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; color: #15171b; line-height: 1.6;">
+        <p>Hi ${name || "there"},</p>
+        <p>We are reaching out because we value your perspective as a leader.</p>
+        <p>For years, our team at Management Innovations has watched brilliant executives get trapped in the "Extractive Century" model—confusing motion with progress, and endless busyness with actual business outcomes. That’s exactly why Manoj Onkar wrote <em>KILL BUSYness</em>.</p>
+        <p>But reading a book is only step one. Changing organizational behavior requires daily, in-the-moment reinforcement.</p>
+        <p>That’s why our team has been secretly building the <strong>KILL BUSYness App</strong>—a bite-sized, gamified learning companion designed to help leaders instantly shift from activities to outcomes. And before we launch it to the public, we want you to be one of the very first to test the Beta version.</p>
+        
+        <h3 style="color: #0E9C74; margin-top: 24px;">What you'll find inside:</h3>
+        <ul style="padding-left: 20px;">
+          <li style="margin-bottom: 10px;"><strong>2-Minute Micro-Modules:</strong> The entire <em>KILL BUSYness</em> methodology broken down into actionable, bite-sized lessons with built-in audio.</li>
+          <li style="margin-bottom: 10px;"><strong>The AI OD Coach:</strong> We've trained a dedicated AI engine on Manoj's exact organizational development frameworks. It acts as an on-demand consultant to help you navigate your current team dilemmas.</li>
+          <li style="margin-bottom: 10px;"><strong>Reflection & Gamification:</strong> Earn "MI Credits" for completing modules and reflecting on how to apply them to your workspace.</li>
+        </ul>
+        
+        <h3 style="color: #0E9C74; margin-top: 24px;">Our ask of you:</h3>
+        <p>We’re not looking for praise; we’re looking for friction. We want you to log in, test the interface, and try to stump the AI Coach with your hardest leadership challenges.</p>
+        <ol style="padding-left: 20px;">
+          <li style="margin-bottom: 10px;">
+            <strong>Access the Beta here:</strong><br/>
+            Since your secure account has already been generated, simply click the secure access link below to instantly log in and set a password:<br/>
+            <a href="${magicLink}" style="display: inline-block; margin-top: 8px; padding: 10px 20px; background: #0E9C74; color: #fff; text-decoration: none; border-radius: 6px; font-weight: bold;">Secure Auto-Login & Set Password</a>
+          </li>
+          <li style="margin-bottom: 10px;"><strong>Download the App:</strong> For the best experience, install the app directly to your phone or desktop. Open the link in Chrome or Safari, tap the Share/Menu icon, and select <strong>"Add to Home Screen"</strong> (or "Install App" on desktop).</li>
+          <li style="margin-bottom: 10px;"><strong>Give Feedback:</strong> Use the thumbs up/down buttons inside the AI Coach, or click the "Email KILL BUSYness Team" button to tell us exactly what works, what doesn't, and what you'd like to see added.</li>
+        </ol>
+        
+        <p>Your insights will directly shape the final version of this platform.</p>
+        <p>Thank you for your time, your leadership, and your feedback. Let's kill busyness together.</p>
+        <p><em>Note: Please send any direct replies or questions to Manoj@managementinnovations.co.in</em></p>
+        
+        <p style="margin-top: 30px;">Best regards,<br/><br/><strong>Team KILL BUSYness</strong><br/>Management Innovations</p>
+      </div>
+    `
   });
 }
 

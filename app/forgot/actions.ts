@@ -1,6 +1,7 @@
 "use server";
 import { redirect } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/server";
+import { sendPortalEmail } from "@/lib/email";
 
 export async function requestReset(formData: FormData) {
   const email = String(formData.get("email") || "").trim().toLowerCase();
@@ -23,35 +24,27 @@ export async function requestReset(formData: FormData) {
 
     const secureLink = `${siteUrl}/auth/verify-link?target=${encodeURIComponent(magicLink)}`;
 
-    const resendKey = process.env.RESEND_API_KEY;
-    if (!resendKey) throw new Error("Email server not configured");
-
-    const sendRes = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: { "Authorization": `Bearer ${resendKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        from: "Team KILL BUSYness <admin@killbusyness.com>",
-        to: email,
-        reply_to: "admin@managementinnovations.co.in",
-        subject: "Reset your KILL BUSYness password",
-        html: `
-          <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; color: #15171b; line-height: 1.6;">
-            <h2 style="color: #0E9C74;">Password Reset Request</h2>
-            <p>We received a request to reset the password for your KILL BUSYness account.</p>
-            <p>Click the secure link below to log in and set a new password:</p>
-            <div style="margin: 24px 0;">
-              <a href="${secureLink}" style="display: inline-block; padding: 12px 24px; background: #0E9C74; color: #fff; text-decoration: none; border-radius: 8px; font-weight: bold;">Reset Password</a>
-            </div>
-            <p>If you did not request this reset, you can safely ignore this email.</p>
-            <p style="margin-top: 30px;">Best regards,<br/><strong>Team KILL BUSYness</strong></p>
+    const sendResult = await sendPortalEmail({
+      from: "Team KILL BUSYness <admin@killbusyness.com>",
+      to: email,
+      replyTo: "admin@managementinnovations.co.in",
+      subject: "Reset your KILL BUSYness password",
+      html: `
+        <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; color: #15171b; line-height: 1.6;">
+          <h2 style="color: #0E9C74;">Password Reset Request</h2>
+          <p>We received a request to reset the password for your KILL BUSYness account.</p>
+          <p>Click the secure link below to log in and set a new password:</p>
+          <div style="margin: 24px 0;">
+            <a href="${secureLink}" style="display: inline-block; padding: 12px 24px; background: #0E9C74; color: #fff; text-decoration: none; border-radius: 8px; font-weight: bold;">Reset Password</a>
           </div>
-        `
-      })
+          <p>If you did not request this reset, you can safely ignore this email.</p>
+          <p style="margin-top: 30px;">Best regards,<br/><strong>Team KILL BUSYness</strong></p>
+        </div>
+      `
     });
 
-    if (!sendRes.ok) {
-      const detail = await sendRes.text().catch(() => "");
-      console.error("[PasswordReset] Resend rejected the email:", sendRes.status, detail);
+    if (!sendResult.success) {
+      console.error("[PasswordReset] Dispatch failed:", sendResult.error);
       return { error: "We couldn't send the reset email right now. Please try again in a few minutes or write to admin@managementinnovations.co.in." };
     }
 

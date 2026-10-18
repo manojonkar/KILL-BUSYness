@@ -3,7 +3,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getProgress } from "@/lib/gamification";
-import { Resend } from "resend";
+import { sendPortalEmail } from "@/lib/email";
 
 export async function redeemItem(name: string) {
   const supabase = createClient();
@@ -38,20 +38,15 @@ export async function redeemItem(name: string) {
 
   await supabase.from('redemptions').insert({ user_id: user.id, item: name, cost: cost });
 
-  const key = process.env.RESEND_API_KEY;
-  if (key) {
-    try {
-      const resend = new Resend(key);
-      await resend.emails.send({
-        from: "KILL BUSYness Portal <admin@killbusyness.com>",
-        to: "manoj@managementinnovations.co.in",
-        cc: "Killbusynessteam@gmail.com",
-        subject: `MI Currency redemption: ${name}`,
-        html: `<p>${user.email} redeemed <strong>${name}</strong>.</p>`
-      });
-    } catch {
-    }
-  }
+  try {
+    await sendPortalEmail({
+      from: "KILL BUSYness Portal <admin@killbusyness.com>",
+      to: "manoj@managementinnovations.co.in",
+      cc: "Killbusynessteam@gmail.com",
+      subject: `MI Currency redemption: ${name}`,
+      html: `<p>${user.email} redeemed <strong>${name}</strong>.</p>`
+    });
+  } catch {}
   revalidatePath("/rewards");
   
   if (name.includes("Synopsis") || name.includes("PDF")) {
@@ -88,24 +83,20 @@ export async function submitClaim(claimType: string, details: string) {
   if (error) return { success: false, error: "Could not submit claim." };
 
   // Email notification — this is a sales lead
-  const key = process.env.RESEND_API_KEY;
-  if (key) {
-    try {
-      const labels: Record<string, string> = {
-        gift_book: "Gifted the book",
-        attend_training: "Attended public training",
-        organize_training: "Organized in-house training",
-      };
-      const resend = new Resend(key);
-      await resend.emails.send({
-        from: "KILL BUSYness Portal <admin@killbusyness.com>",
-        to: "manoj@managementinnovations.co.in",
-        cc: "Killbusynessteam@gmail.com",
-        subject: `Credit claim: ${labels[claimType] || claimType}`,
-        html: `<p><strong>${user.email}</strong> submitted a claim for <strong>${labels[claimType]}</strong> (${credits} credits).</p><p>Details: ${details}</p><p>Approve at <a href="https://www.killbusyness.com/admin/claims">admin/claims</a>.</p>`
-      });
-    } catch {}
-  }
+  try {
+    const labels: Record<string, string> = {
+      gift_book: "Gifted the book",
+      attend_training: "Attended public training",
+      organize_training: "Organized in-house training",
+    };
+    await sendPortalEmail({
+      from: "KILL BUSYness Portal <admin@killbusyness.com>",
+      to: "manoj@managementinnovations.co.in",
+      cc: "Killbusynessteam@gmail.com",
+      subject: `Credit claim: ${labels[claimType] || claimType}`,
+      html: `<p><strong>${user.email}</strong> submitted a claim for <strong>${labels[claimType]}</strong> (${credits} credits).</p><p>Details: ${details}</p><p>Approve at <a href="https://www.killbusyness.com/admin/claims">admin/claims</a>.</p>`
+    });
+  } catch {}
 
   revalidatePath("/rewards");
   return { success: true };
@@ -154,27 +145,22 @@ export async function submitTrainingApplication(itemName: string, formData: Form
     return { error: "Failed to save application." };
   }
 
-  const resendKey = process.env.RESEND_API_KEY;
-  if (resendKey) {
-    await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: { "Authorization": `Bearer ${resendKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        from: "admin@killbusyness.com",
-        to: "manoj@managementinnovations.co.in",
-        cc: "Killbusynessteam@gmail.com",
-        subject: `New Training Application: ${itemName}`,
-        html: `
-          <p><strong>Name:</strong> ${name}</p>
-          <p><strong>Email:</strong> ${email}</p>
-          <p><strong>Company:</strong> ${company}</p>
-          <p><strong>Dates:</strong> ${preferred_dates}</p>
-          <p><strong>Attendees:</strong> ${attendees}</p>
-          <p>This user wants to use MI Credits towards this training. You can view the application in the Admin dashboard.</p>
-        `
-      })
+  try {
+    await sendPortalEmail({
+      from: "admin@killbusyness.com",
+      to: "manoj@managementinnovations.co.in",
+      cc: "Killbusynessteam@gmail.com",
+      subject: `New Training Application: ${itemName}`,
+      html: `
+        <p><strong>Name:</strong> ${name}</p>
+        <p><strong>Email:</strong> ${email}</p>
+        <p><strong>Company:</strong> ${company}</p>
+        <p><strong>Dates:</strong> ${preferred_dates}</p>
+        <p><strong>Attendees:</strong> ${attendees}</p>
+        <p>This user wants to use MI Credits towards this training. You can view the application in the Admin dashboard.</p>
+      `
     });
-  }
+  } catch {}
 
   return { success: true };
 }
@@ -197,25 +183,20 @@ export async function submitMixedCurrencyPayment(itemName: string, creditsUsed: 
   const { data: userData } = await supabase.auth.getUser();
   const userEmail = userData.user?.email || "Unknown user";
 
-  const resendKey = process.env.RESEND_API_KEY;
-  if (resendKey) {
-    await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: { "Authorization": `Bearer ${resendKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        from: "admin@killbusyness.com",
-        to: "manoj@managementinnovations.co.in",
-        cc: "Killbusynessteam@gmail.com",
-        subject: `New Executive Conversation Purchase: ${itemName}`,
-        html: `
-          <p>User <strong>${userEmail}</strong> has purchased: <strong>${itemName}</strong></p>
-          <p>They redeemed <strong>${creditsUsed} MI Credits</strong>.</p>
-          <p>They paid the remaining balance of <strong>Rs. ${inrPaid}</strong> via the UPI QR code.</p>
-          <p><strong>Action required:</strong> Please verify the UPI payment in your bank app, then email them their calendar booking link.</p>
-        `
-      })
+  try {
+    await sendPortalEmail({
+      from: "admin@killbusyness.com",
+      to: "manoj@managementinnovations.co.in",
+      cc: "Killbusynessteam@gmail.com",
+      subject: `New Executive Conversation Purchase: ${itemName}`,
+      html: `
+        <p>User <strong>${userEmail}</strong> has purchased: <strong>${itemName}</strong></p>
+        <p>They redeemed <strong>${creditsUsed} MI Credits</strong>.</p>
+        <p>They paid the remaining balance of <strong>Rs. ${inrPaid}</strong> via the UPI QR code.</p>
+        <p><strong>Action required:</strong> Please verify the UPI payment in your bank app, then email them their calendar booking link.</p>
+      `
     });
-  }
+  } catch {}
 
   revalidatePath("/rewards");
   return { success: true };

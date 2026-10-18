@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { sendPortalEmail } from "@/lib/email";
 
 /** Round to nearest 10 */
 function creditsForAmount(amountINR: number): number {
@@ -168,17 +169,13 @@ export async function updateOrderStatus(formData: FormData) {
 
       if (subject && htmlBody) {
         try {
-          await fetch("https://api.resend.com/emails", {
-            method: "POST",
-            headers: { "Authorization": `Bearer ${resendKey}`, "Content-Type": "application/json" },
-            body: JSON.stringify({
-              from: "Team KILL BUSYness <admin@killbusyness.com>",
-              reply_to: "admin@managementinnovations.co.in",
-              cc: "Killbusynessteam@gmail.com",
-              to: order.email,
-              subject: subject,
-              html: htmlBody
-            })
+          await sendPortalEmail({
+            from: "Team KILL BUSYness <admin@killbusyness.com>",
+            replyTo: "admin@managementinnovations.co.in",
+            cc: "Killbusynessteam@gmail.com",
+            to: order.email,
+            subject: subject,
+            html: htmlBody
           });
         } catch (e) {
           console.error("Failed to send order status email:", e);

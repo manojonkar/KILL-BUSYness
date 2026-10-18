@@ -1,7 +1,7 @@
 "use server";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { Resend } from "resend";
+import { sendPortalEmail } from "@/lib/email";
 
 const VALID_ROLES: Record<string, string> = {
   "owner / ceo": "owner_ceo",
@@ -11,19 +11,17 @@ const VALID_ROLES: Record<string, string> = {
 };
 
 export async function sendInviteEmail(toEmail: string, participantName: string, companyName: string, token: string) {
-  const key = process.env.RESEND_API_KEY;
-  if (!key) return;
   try {
-    const resend = new Resend(key);
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.killbusyness.com";
-    await resend.emails.send({
+    await sendPortalEmail({
       from: "KILL BUSYness Portal <admin@killbusyness.com>",
       to: toEmail,
       cc: "Killbusynessteam@gmail.com",
       subject: "Invitation to KILL BUSYness Organization Audit",
       html: `<p>Hi ${participantName || "there"},</p><p><strong>${companyName}</strong> has invited you to take part in the KILL BUSYness Organization Audit - a short, confidential diagnostic of how your organization really runs.</p><p><a href="${siteUrl}/survey/${token}">Start the survey</a></p><p>It takes about 10 minutes and is completely confidential.</p>`
     });
-  } catch {
+  } catch (err) {
+    console.error("Failed to send invite email:", err);
   }
 }
 

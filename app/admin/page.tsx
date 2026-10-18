@@ -14,6 +14,32 @@ export const dynamic = "force-dynamic";
 
 type Tab = "orders" | "companies" | "surveys" | "users" | "masterclass" | "stories" | "reports" | "contact" | "grant-access" | "access";
 
+async function fetchAllResponses(client: ReturnType<typeof createAdminClient>) {
+  const allRows: { participant_id: string; question_index: number; answer: number }[] = [];
+  const pageSize = 1000;
+  let from = 0;
+  let hasMore = true;
+
+  while (hasMore) {
+    const { data, error } = await client
+      .from("responses")
+      .select("participant_id, question_index, answer")
+      .range(from, from + pageSize - 1);
+
+    if (error || !data || data.length === 0) {
+      break;
+    }
+    allRows.push(...data);
+    if (data.length < pageSize) {
+      hasMore = false;
+    } else {
+      from += pageSize;
+    }
+  }
+
+  return allRows;
+}
+
 export default async function AdminDashboardPage({
   searchParams
 }: {
@@ -41,7 +67,7 @@ export default async function AdminDashboardPage({
     { data: chapterReadRows },
     { data: reflectionRows },
     { data: storiesRows },
-    { data: allResponseRows },
+    allResponseRows,
     { data: contactRows }
   ] = await Promise.all([
     adminClient
@@ -61,7 +87,7 @@ export default async function AdminDashboardPage({
     adminClient.from("user_chapter_reads").select("*"),
     adminClient.from("user_reflections").select("*"),
     adminClient.from("stories").select("*").order("created_at", { ascending: false }),
-    adminClient.from("responses").select("participant_id, question_index, answer"),
+    fetchAllResponses(adminClient),
     adminClient.from("contact_messages").select("*").order("created_at", { ascending: false })
   ]);
 
@@ -483,6 +509,7 @@ export default async function AdminDashboardPage({
                       <th style={{ padding: 12, textAlign: "center" }}>Invited Seats</th>
                       <th style={{ padding: 12, textAlign: "center" }}>Completions</th>
                       <th style={{ padding: 12, textAlign: "center" }}>Audit Score</th>
+                      <th style={{ padding: 12, textAlign: "center" }}>Report</th>
                       <th style={{ padding: 12 }}>Created Date</th>
                     </tr>
                   </thead>
@@ -524,7 +551,16 @@ export default async function AdminDashboardPage({
 
                       return (
                         <tr key={c.id} style={{ borderBottom: "1px solid var(--line)" }}>
-                          <td style={{ padding: 12, fontWeight: "bold", color: "var(--ink)" }}>{c.name}</td>
+                          <td style={{ padding: 12, fontWeight: "bold" }}>
+                            <Link
+                              href={`/report/${c.id}`}
+                              target="_blank"
+                              style={{ color: "var(--teal-ink, #0f766e)", textDecoration: "underline" }}
+                              title="Open live audit report"
+                            >
+                              {c.name}
+                            </Link>
+                          </td>
                           <td style={{ padding: 12 }}>
                             {c.admin_name || "—"}
                             <div style={{ fontSize: "0.78rem", color: "var(--ink-soft)" }}>{c.admin_email || "—"}</div>
@@ -545,12 +581,12 @@ export default async function AdminDashboardPage({
                           </td>
                           <td style={{ padding: 12, textAlign: "center" }}>
                             {auditScore !== null ? (
-                              <span style={{
-                                display: "inline-flex",
-                                flexDirection: "column",
-                                alignItems: "center",
-                                gap: 2
-                              }}>
+                              <Link
+                                href={`/report/${c.id}`}
+                                target="_blank"
+                                style={{ textDecoration: "none", display: "inline-flex", flexDirection: "column", alignItems: "center", gap: 2 }}
+                                title="Click to view full report"
+                              >
                                 <span style={{
                                   padding: "3px 10px",
                                   borderRadius: 6,
@@ -564,10 +600,29 @@ export default async function AdminDashboardPage({
                                 <span style={{ fontSize: "0.68rem", color: "var(--ink-faint)" }}>
                                   {auditScore >= 70 ? "✅ Healthy" : auditScore >= 40 ? "⚠️ Moderate" : "🔴 At Risk"}
                                 </span>
-                              </span>
+                              </Link>
                             ) : (
                               <span style={{ color: "var(--ink-faint)", fontSize: "0.8rem" }}>No data yet</span>
                             )}
+                          </td>
+                          <td style={{ padding: 12, textAlign: "center" }}>
+                            <Link
+                              href={`/report/${c.id}`}
+                              target="_blank"
+                              style={{
+                                display: "inline-block",
+                                background: "#0f766e",
+                                color: "#fff",
+                                textDecoration: "none",
+                                padding: "4px 10px",
+                                borderRadius: 6,
+                                fontSize: "0.78rem",
+                                fontWeight: 600,
+                                whiteSpace: "nowrap"
+                              }}
+                            >
+                              Live Report ↗
+                            </Link>
                           </td>
                           <td style={{ padding: 12, color: "var(--ink-soft)" }}>{regDate}</td>
                         </tr>

@@ -2,7 +2,7 @@
 import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/server";
 
-import { Resend } from "resend";
+import { sendPortalEmail } from "@/lib/email";
 
 export async function submitAnswer(token: string, questionIndex: number, answer: number) {
   const supabase = createAdminClient();
@@ -34,15 +34,14 @@ export async function completeSurvey(token: string) {
     }
 
     // 2. Send the participant an auto-invite to claim their 25 points
-    const key = process.env.RESEND_API_KEY;
-    if (key && p.email) {
+    if (p.email) {
       try {
-        const resend = new Resend(key);
         const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.killbusyness.com";
-        await resend.emails.send({
+        await sendPortalEmail({
           from: "KILL BUSYness Portal <admin@killbusyness.com>",
           to: p.email,
           cc: "Killbusynessteam@gmail.com",
+          replyTo: "admin@managementinnovations.co.in",
           subject: "Your Organization Diagnostic is Complete — Claim your 25 MI Credits",
           html: `<p>Hi ${p.name || "there"},</p>
                  <p>Thank you for completing the KILL BUSYness Organization Audit!</p>
@@ -56,4 +55,9 @@ export async function completeSurvey(token: string) {
   }
 
   revalidatePath(`/survey/${token}`);
+  if (p?.company_id) {
+    revalidatePath(`/report/${p.company_id}`);
+  }
+  revalidatePath("/admin");
+  revalidatePath("/dashboard");
 }

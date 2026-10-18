@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
 import { Resend } from "resend";
+import { sendPortalEmail } from "@/lib/email";
 
 export const dynamic = "force-dynamic";
 
@@ -181,17 +182,96 @@ export async function GET(request: Request) {
       </div>
     `;
 
-    // 5. Send daily email via Resend
-    const resendApiKey = process.env.RESEND_API_KEY;
-    if (resendApiKey) {
-      const resend = new Resend(resendApiKey);
-      await resend.emails.send({
-        from: "KILL BUSYness Portal <admin@killbusyness.com>",
-        to: "manoj@managementinnovations.co.in",
-        cc: "Killbusynessteam@gmail.com",
-        subject: `[KILL BUSYness] Daily Activity Report — ${new Date().toLocaleDateString('en-IN')}`,
-        html: emailHtml
-      });
+    // 5. Send daily email via universal dispatcher (Brevo primary, Resend fallback)
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.killbusyness.com";
+    let organizerEmailsSent = 0;
+
+    // Send master report to Manoj & team
+    const masterEmailRes = await sendPortalEmail({
+      from: "KILL BUSYness Portal <admin@killbusyness.com>",
+      to: "manoj@managementinnovations.co.in",
+      cc: "Killbusynessteam@gmail.com",
+      replyTo: "admin@managementinnovations.co.in",
+      subject: `[KILL BUSYness] Daily Activity Report — ${new Date().toLocaleDateString('en-IN')}`,
+      html: emailHtml
+    });
+
+    // 6. Send updated report links to organization audit organizers if any survey completions occurred in last 24h
+    if (resNewCompletions.length > 0) {
+      const updatedCompanyIds = Array.from(
+        new Set(resNewCompletions.map((p: any) => p.company_id).filter(Boolean))
+      ) as string[];
+
+      for (const compId of updatedCompanyIds) {
+        const { data: comp } = await supabase
+          .from("companies")
+          .select("*")
+          .eq("id", compId)
+          .maybeSingle();
+
+        if (comp?.admin_email) {
+          const { count: compCompletionsCount } = await supabase
+            .from("participants")
+            .select("*", { count: "exact", head: true })
+            .eq("company_id", compId)
+            .eq("status", "completed");
+
+          const { count: compTotalInvited } = await supabase
+            .from("participants")
+            .select("*", { count: "exact", head: true })
+            .eq("company_id", compId);
+
+          const organizerHtml = `
+            <div style="font-family: sans-serif; color: #1e293b; max-width: 600px; margin: 0 auto; padding: 24px; line-height: 1.6; border: 1px solid #e2e8f0; border-radius: 8px;">
+              <div style="margin-bottom: 20px;">
+                <span style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: #0f766e; font-weight: bold;">KILL BUSYness Organization Audit</span>
+                <h2 style="color: #0f172a; margin: 6px 0 0;">Daily Survey Activity Update</h2>
+              </div>
+
+              <p>Dear ${comp.admin_name || "Audit Organizer"},</p>
+
+              <p>New team members have completed their survey assessments for <strong>${comp.name}</strong> over the last 24 hours.</p>
+
+              <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 16px 20px; margin: 20px 0;">
+                <div style="font-size: 0.9rem; color: #64748b; margin-bottom: 6px;">Current Audit Progress</div>
+                <div style="font-size: 1.4rem; font-weight: bold; color: #0f766e;">
+                  ${compCompletionsCount || 0} of ${compTotalInvited || comp.seats || 0} participants completed
+                </div>
+              </div>
+
+              <p>Your Organization Diagnostic Report updates continuously in real-time with every submission. You can view the live findings, dimension breakdowns, and actionable recommendations at the link below:</p>
+
+              <div style="text-align: center; margin: 28px 0;">
+                <a href="${siteUrl}/report/${comp.id}" style="background-color: #0f766e; color: #ffffff; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: bold; font-size: 0.95rem; display: inline-block;">
+                  View Live Organization Report ↗
+                </a>
+              </div>
+
+              <p style="font-size: 0.82rem; color: #64748b;">Direct link: <a href="${siteUrl}/report/${comp.id}" style="color: #0f766e;">${siteUrl}/report/${comp.id}</a></p>
+
+              <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 28px 0;" />
+              <p style="font-size: 0.78rem; color: #94a3b8; text-align: center;">
+                KILL BUSYness Portal · Management Innovations<br/>
+                If you have any questions, reply directly to this email or reach us at <a href="mailto:admin@managementinnovations.co.in" style="color: #0f766e;">admin@managementinnovations.co.in</a>.
+              </p>
+            </div>
+          `;
+
+          try {
+            const orgRes = await sendPortalEmail({
+              from: "KILL BUSYness Portal <admin@killbusyness.com>",
+              to: comp.admin_email,
+              cc: "Killbusynessteam@gmail.com",
+              replyTo: "admin@managementinnovations.co.in",
+              subject: `[KILL BUSYness] Daily Update: Your Organization Health Report has new responses — ${comp.name}`,
+              html: organizerHtml
+            });
+            if (orgRes.success) organizerEmailsSent++;
+          } catch (err) {
+            console.error(`Failed to send daily organizer update to ${comp.admin_email}:`, err);
+          }
+        }
+      }
     }
 
     return NextResponse.json({
@@ -200,7 +280,8 @@ export async function GET(request: Request) {
       newOrders: resNewOrders.length,
       newCompanies: resNewCompanies.length,
       newCompletions: resNewCompletions.length,
-      emailSent: !!resendApiKey
+      organizerEmailsSent,
+      emailSent: masterEmailRes.success
     });
   } catch (err: any) {
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });
