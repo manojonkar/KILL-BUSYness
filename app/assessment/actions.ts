@@ -1,4 +1,4 @@
-﻿"use server";
+"use server";
 
 import { Resend } from "resend";
 
@@ -16,6 +16,7 @@ export async function sendAssessmentEmail(email: string, score: number, bandName
     const { data: day1, error: err1 } = await resend.emails.send({
       from: "Manoj Onkar <manoj@killbusyness.com>",
       to: email,
+      cc: "Killbusynessteam@gmail.com",
       subject: "Your HPO Score reveals a critical growth bottleneck",
       html: `
         <div style="font-family: sans-serif; color: #1e293b; line-height: 1.6; max-width: 600px;">
@@ -36,6 +37,7 @@ export async function sendAssessmentEmail(email: string, score: number, bandName
     const { data: day3, error: err3 } = await resend.emails.send({
       from: "Manoj Onkar <manoj@killbusyness.com>",
       to: email,
+      cc: "Killbusynessteam@gmail.com",
       subject: "The Three Silences killing your organization",
       html: `
         <div style="font-family: sans-serif; color: #1e293b; line-height: 1.6; max-width: 600px;">

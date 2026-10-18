@@ -100,6 +100,7 @@ export async function submitClaim(claimType: string, details: string) {
       await resend.emails.send({
         from: "KILL BUSYness Portal <admin@killbusyness.com>",
         to: "manoj@managementinnovations.co.in",
+        cc: "Killbusynessteam@gmail.com",
         subject: `Credit claim: ${labels[claimType] || claimType}`,
         html: `<p><strong>${user.email}</strong> submitted a claim for <strong>${labels[claimType]}</strong> (${credits} credits).</p><p>Details: ${details}</p><p>Approve at <a href="https://www.killbusyness.com/admin/claims">admin/claims</a>.</p>`
       });
@@ -161,6 +162,7 @@ export async function submitTrainingApplication(itemName: string, formData: Form
       body: JSON.stringify({
         from: "admin@killbusyness.com",
         to: "manoj@managementinnovations.co.in",
+        cc: "Killbusynessteam@gmail.com",
         subject: `New Training Application: ${itemName}`,
         html: `
           <p><strong>Name:</strong> ${name}</p>
@@ -203,6 +205,7 @@ export async function submitMixedCurrencyPayment(itemName: string, creditsUsed: 
       body: JSON.stringify({
         from: "admin@killbusyness.com",
         to: "manoj@managementinnovations.co.in",
+        cc: "Killbusynessteam@gmail.com",
         subject: `New Executive Conversation Purchase: ${itemName}`,
         html: `
           <p>User <strong>${userEmail}</strong> has purchased: <strong>${itemName}</strong></p>

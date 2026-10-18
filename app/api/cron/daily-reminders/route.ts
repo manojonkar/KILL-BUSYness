@@ -1,4 +1,4 @@
-﻿import { NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
 import { Resend } from "resend";
 
@@ -58,6 +58,7 @@ export async function GET(request: Request) {
           await resend.emails.send({
             from: "KILL BUSYness Portal <admin@killbusyness.com>",
             to: p.email,
+            cc: "Killbusynessteam@gmail.com",
             subject: `${reminderText}: Invitation to the KILL BUSYness Organization Audit`,
             html: `<p>Dear ${p.name || "Colleague"},</p>
                    <p>This is a polite reminder that <strong>${companyName}</strong> has invited you to take part in the KILL BUSYness Organization Audit.</p>
@@ -110,6 +111,7 @@ export async function GET(request: Request) {
             await resend.emails.send({
               from: "KILL BUSYness Portal <admin@killbusyness.com>",
               to: adminEmail,
+              cc: "Killbusynessteam@gmail.com",
               subject: `${reminderType}: Audit Participation Status for ${comp.name}`,
               html: `<p>Hello,</p>
                      <p>Here is the current participation status for the <strong>${comp.name}</strong> Organization Audit.</p>
@@ -145,6 +147,7 @@ export async function GET(request: Request) {
           await resend.emails.send({
             from: "Manoj Onkar <admin@killbusyness.com>",
             to: u.email,
+            cc: "Killbusynessteam@gmail.com",
             subject: "Your Exclusive Invite: The KILL BUSYness Masterclass",
             html: `<p>Hi ${u.user_metadata?.name || "there"},</p>
                    <p>It's been a week since you joined the KILL BUSYness journey. I wanted to personally invite you to the next step.</p>

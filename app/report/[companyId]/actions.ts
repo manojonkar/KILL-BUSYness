@@ -88,7 +88,7 @@ export async function assignSprintTask(formData: FormData) {
         await resend.emails.send({
           from: "KILL BUSYness Portal <admin@killbusyness.com>",
           to: participant.email,
-          cc: "manoj@managementinnovations.co.in",
+          cc: "Killbusynessteam@gmail.com",
           subject: `You have been assigned to lead Sprint Month ${monthIndex + 1}`,
           html: `<p>Hi ${participant.name},</p><p>You have been assigned by your leadership team at <strong>${company.name}</strong> to own <strong>${taskTitle}</strong> for Month ${monthIndex + 1} of the turnaround sprint.</p><p>Log in to the portal to view the details and track your progress.</p>`
         }).catch(() => {});

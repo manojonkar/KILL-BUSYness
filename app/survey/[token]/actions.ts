@@ -42,6 +42,7 @@ export async function completeSurvey(token: string) {
         await resend.emails.send({
           from: "KILL BUSYness Portal <admin@killbusyness.com>",
           to: p.email,
+          cc: "Killbusynessteam@gmail.com",
           subject: "Your Organization Diagnostic is Complete — Claim your 25 MI Credits",
           html: `<p>Hi ${p.name || "there"},</p>
                  <p>Thank you for completing the KILL BUSYness Organization Audit!</p>

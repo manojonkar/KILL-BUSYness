@@ -153,6 +153,7 @@ export async function placeOrder(formData: FormData) {
       await resend.emails.send({
         from: "KILL BUSYness <hello@killbusyness.com>",
         to: email,
+        cc: "Killbusynessteam@gmail.com",
         subject: `Your Order Reference: ${ref}`,
         html: `<p>Hi ${name},</p><p>You ordered ${quantity}x <strong>${fmt.label}</strong>.</p><p>Your reference is <strong>${ref}</strong>.</p><p>Amount to pay: ${isInternational ? 'US$' : 'Rs'} ${finalPrice}</p><p>Please complete payment by ${isInternational ? 'Razorpay' : 'UPI'} if you haven't already.</p>`
       });
@@ -161,6 +162,7 @@ export async function placeOrder(formData: FormData) {
       await resend.emails.send({
         from: "KILL BUSYness System <admin@killbusyness.com>",
         to: "manoj@managementinnovations.co.in",
+        cc: "Killbusynessteam@gmail.com",
         subject: `NEW ORDER ALERT: ${quantity}x ${fmt.label}`,
         html: `<h2>New Order Received!</h2>
         <p><strong>Customer:</strong> ${name} (${email})</p>

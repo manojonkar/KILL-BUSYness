@@ -86,6 +86,7 @@ async function sendWelcomeEmail(name: string, email: string, formats: string[]) 
     body: JSON.stringify({
       from: "Team KILL BUSYness <admin@killbusyness.com>",
       to: email,
+      cc: "Killbusynessteam@gmail.com",
       reply_to: "admin@managementinnovations.co.in",
       subject: "Your Exclusive Access to KILL BUSYness is Ready!",
       html: `
@@ -123,6 +124,7 @@ async function sendAppInviteEmail(name: string, email: string) {
     body: JSON.stringify({
       from: "Team KILL BUSYness <admin@killbusyness.com>",
       to: email,
+      cc: "Killbusynessteam@gmail.com",
       reply_to: "admin@managementinnovations.co.in",
       subject: "Invitation: Help shape the future of the KILL BUSYness app (Beta)",
       html: `

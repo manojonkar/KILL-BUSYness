@@ -1,4 +1,4 @@
-﻿"use server";
+"use server";
 import { Resend } from "resend";
 import { createAdminClient } from "@/lib/supabase/server";
 
@@ -40,6 +40,7 @@ export async function sendMasterclassInvite(formData: FormData) {
   await resend.emails.send({
     from: "Manoj Onkar <admin@killbusyness.com>",
     to: email,
+    cc: "Killbusynessteam@gmail.com",
     subject: "Your Exclusive Invite: The KILL BUSYness Masterclass",
     html: `<p>Hi ${name || "there"},</p>
            <p>I wanted to personally invite you to access a private resource we just launched.</p>
