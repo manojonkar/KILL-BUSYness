@@ -54,15 +54,15 @@ export const PROMO_CODES: Record<string, PromoCode> = {
   "LAURUS": { discountPercent: 10 }
 };
 
-// 30-Day Temporary Open Access Window (Ends December 11, 2026 23:59:59 UTC)
-export const TEMPORARY_OPEN_ACCESS_END = new Date("2026-12-11T23:59:59Z").getTime();
+// Temporary Open Access Window (Active until manually disabled)
+export const TEMPORARY_OPEN_ACCESS = true;
 
 export function isTemporaryAccessActive(): boolean {
-  return Date.now() < TEMPORARY_OPEN_ACCESS_END;
+  return TEMPORARY_OPEN_ACCESS;
 }
 
-export async function hasPurchasedAnyBook(supabase: SupabaseClient, email: string): Promise<boolean> {
-  if (isTemporaryAccessActive()) return true;
+export async function hasPurchasedAnyBook(supabase: SupabaseClient, email: string, ignoreTemp = false): Promise<boolean> {
+  if (!ignoreTemp && isTemporaryAccessActive()) return true;
   if (!email) return false;
   const { data } = await supabase
     .from("book_orders")
@@ -74,8 +74,8 @@ export async function hasPurchasedAnyBook(supabase: SupabaseClient, email: strin
   return data.some(d => d.format === "ebook" || d.format === "paperback" || d.format === "audiobook" || (d.notes && d.notes.includes("[FORMAT:audiobook]")));
 }
 
-export async function hasPurchasedAudioBook(supabase: SupabaseClient, email: string, chapterId?: number): Promise<boolean> {
-  if (isTemporaryAccessActive()) return true;
+export async function hasPurchasedAudioBook(supabase: SupabaseClient, email: string, chapterId?: number, ignoreTemp = false): Promise<boolean> {
+  if (!ignoreTemp && isTemporaryAccessActive()) return true;
   if (!email) return false;
   const { data } = await supabase
     .from("book_orders")
@@ -91,8 +91,8 @@ export async function hasPurchasedAudioBook(supabase: SupabaseClient, email: str
   });
 }
 
-export async function hasPurchasedPdfChapter(supabase: SupabaseClient, email: string, chapterId: number): Promise<boolean> {
-  if (isTemporaryAccessActive()) return true;
+export async function hasPurchasedPdfChapter(supabase: SupabaseClient, email: string, chapterId: number, ignoreTemp = false): Promise<boolean> {
+  if (!ignoreTemp && isTemporaryAccessActive()) return true;
   if (!email) return false;
   const { data } = await supabase
     .from("book_orders")

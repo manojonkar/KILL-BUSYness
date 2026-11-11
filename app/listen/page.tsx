@@ -1,10 +1,8 @@
-import { redirect } from "next/navigation";
 import Link from "next/link";
 import Header from "@/components/Header";
 import { CHAPTERS } from "@/lib/chapters";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { hasPurchasedAudioBook } from "@/lib/book";
-import { hasRedeemedAudioChapter, hasRedeemedFullAudioBook, getChapterReads } from "@/lib/gamification";
 
 const FULL_AUDIOBOOK_VIDEO_ID = "ESwDzvA9mCg";
 
@@ -14,24 +12,20 @@ export default async function ListenLibraryPage() {
     const adminClient = createAdminClient();
     const { data: { user } } = await supabase.auth.getUser();
 
-    let fullBookPurchased = await hasPurchasedAudioBook(adminClient, user?.email || "");
-    let fullBookRedeemed = user ? await hasRedeemedFullAudioBook(supabase, user.id) : false;
-    const hasFullAccess = fullBookPurchased || fullBookRedeemed;
+    // Check lifetime purchase status (ignoring temporary access)
+    const isPermanentlyOwned = await hasPurchasedAudioBook(adminClient, user?.email || "", undefined, true);
 
-    const chapterAccess = await Promise.all(
-      CHAPTERS.map(async (c) => {
-        let access = !!c.isAudioPublic || hasFullAccess;
-        if (!access) {
-          access = await hasPurchasedAudioBook(adminClient, user?.email || "", c.id);
-        }
-        if (!access && user) {
-          access = await hasRedeemedAudioChapter(supabase, user.id, c.id);
-        }
-        return { id: c.id, hasAccess: access };
-      })
-    );
-
-    const accessMap = new Map(chapterAccess.map((a) => [a.id, a.hasAccess]));
+    const paidChapters = new Set<number>();
+    if (isPermanentlyOwned) {
+      CHAPTERS.forEach(c => paidChapters.add(c.id));
+    } else {
+      await Promise.all(
+        CHAPTERS.map(async (c) => {
+          const hasPaid = await hasPurchasedAudioBook(adminClient, user?.email || "", c.id, true);
+          if (hasPaid) paidChapters.add(c.id);
+        })
+      );
+    }
 
     return (
       <>
@@ -40,60 +34,65 @@ export default async function ListenLibraryPage() {
           <div className="section-head">
             <span className="eyebrow">Audio Experience</span>
             <h2>Listen to KILL BUSYness</h2>
-            <p>Experience the complete book through audio and video. Purchase the full AudioBook, or unlock individual chapters as you go.</p>
+            <p>Experience the complete book through audio and video. Purchase the full AudioBook, or enjoy instant playback via Temporary Access.</p>
           </div>
 
           {/* ── Full AudioBook ── */}
           <div className="card" style={{ marginBottom: 40, overflow: "hidden" }}>
-            <div style={{ padding: "24px 28px 0", display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 16 }}>
+            <div style={{ padding: "24px 28px 18px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 16 }}>
               <div>
                 <span className="eyebrow">Complete AudioBook</span>
-                <h3 style={{ margin: "6px 0 6px", fontSize: "1.35rem" }}>KILL BUSYness — Full AudioBook</h3>
+                <h3 style={{ margin: "6px 0 4px", fontSize: "1.35rem" }}>KILL BUSYness — Full AudioBook</h3>
                 <p style={{ margin: 0, color: "#475569", fontSize: "0.92rem" }}>The complete book in one sitting. All chapters, back to back.</p>
               </div>
-              {hasFullAccess ? (
-                <span className="chip level" style={{ flexShrink: 0, alignSelf: "center" }}>Owned</span>
+
+              {isPermanentlyOwned ? (
+                <span className="chip level" style={{ flexShrink: 0 }}>Owned &middot; Lifetime Access</span>
               ) : (
-                <div style={{ display: "flex", alignItems: "center", gap: 12, flexShrink: 0 }}>
-                  <span style={{ fontSize: "0.85rem", color: "#64748b", textAlign: "right", lineHeight: 1.4 }}>Rs. 999<br/>2000 Credits</span>
-                  <a href="/buy?format=audiobook" className="btn" style={{ background: "#e0f2fe", color: "#0369a1", border: "none", fontWeight: 600, whiteSpace: "nowrap" }}>
-                    Buy Full AudioBook
+                <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", flexShrink: 0 }}>
+                  <div style={{ textAlign: "right", lineHeight: 1.3 }}>
+                    <div style={{ fontWeight: 700, color: "#0f172a", fontSize: "1rem" }}>Rs. 999</div>
+                    <div style={{ fontSize: "0.75rem", color: "#64748b" }}>2000 Credits</div>
+                  </div>
+                  <a 
+                    href="/buy?format=audiobook" 
+                    className="btn" 
+                    style={{ background: "#0369a1", color: "#fff", border: "none", fontWeight: 600, padding: "8px 18px", textDecoration: "none" }}
+                  >
+                    BUY AudioBook — Rs. 999
+                  </a>
+                  <a 
+                    href="#audio-player-container" 
+                    className="btn" 
+                    style={{ background: "#f0fdf4", color: "#166534", border: "1px solid #86efac", fontWeight: 600, padding: "8px 18px", textDecoration: "none" }}
+                  >
+                    Temp. Access (Free) ➔
                   </a>
                 </div>
               )}
             </div>
 
-            {hasFullAccess ? (
-              <div style={{ marginTop: 24, position: "relative", paddingTop: "56.25%", background: "#000" }}>
-                <iframe
-                  src={`https://www.youtube.com/embed/${FULL_AUDIOBOOK_VIDEO_ID}?rel=0&modestbranding=1&cc_load_policy=0&iv_load_policy=3`}
-                  title="KILL BUSYness — Full AudioBook"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                  style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", border: "none" }}
-                />
-              </div>
-            ) : (
-              <div style={{ margin: "20px 28px 28px", padding: 24, background: "#f8fafc", borderRadius: 10, border: "1px dashed #cbd5e1", textAlign: "center" }}>
-                <p style={{ margin: "0 0 16px", color: "#64748b", fontSize: "0.95rem" }}>
-                  Purchase the Full AudioBook to unlock the complete recording.
-                </p>
-                <a href="/buy?format=audiobook" className="btn" style={{ background: "#0369a1", color: "#fff", border: "none", fontWeight: 600 }}>
-                  Get Full AudioBook — Rs. 999
-                </a>
-              </div>
-            )}
+            {/* AudioBook player container accessible directly via Temp Access or Paid */}
+            <div id="audio-player-container" style={{ position: "relative", paddingTop: "56.25%", background: "#000", borderTop: "1px solid #cbd5e1" }}>
+              <iframe
+                src={`https://www.youtube.com/embed/${FULL_AUDIOBOOK_VIDEO_ID}?rel=0&modestbranding=1&cc_load_policy=0&iv_load_policy=3`}
+                title="KILL BUSYness — Full AudioBook"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", border: "none" }}
+              />
+            </div>
           </div>
 
           {/* ── Chapter by Chapter ── */}
           <div style={{ marginBottom: 20 }}>
             <h3 style={{ fontSize: "1.1rem", color: "#0f172a", marginBottom: 4 }}>Listen Chapter by Chapter</h3>
-            <p style={{ color: "#475569", fontSize: "0.9rem", margin: 0 }}>Each chapter is also available individually.</p>
+            <p style={{ color: "#475569", fontSize: "0.9rem", margin: 0 }}>Each chapter is available for individual purchase (Rs. 100) or immediate listening via Temporary Access.</p>
           </div>
 
           <div className="grid cols-3">
             {CHAPTERS.map((c) => {
-              const hasChapterAccess = accessMap.get(c.id);
+              const isPaid = paidChapters.has(c.id);
               return (
                 <div key={c.id} className="card chapter-card" style={{ display: "flex", flexDirection: "column" }}>
                   <Link href={`/listen/${c.id}`} style={{ textDecoration: "none", color: "inherit", flex: 1 }}>
@@ -101,17 +100,32 @@ export default async function ListenLibraryPage() {
                     <h3 style={{ fontSize: "1.1rem", marginBottom: 6 }}>{c.title}</h3>
                     <p className="desc" style={{ marginTop: 0 }}>{c.desc}</p>
                   </Link>
-                  <div style={{ marginTop: 16, paddingTop: 16, borderTop: "1px solid var(--line)" }}>
-                    {hasChapterAccess ? (
+                  <div style={{ marginTop: 16, paddingTop: 14, borderTop: "1px solid var(--line)" }}>
+                    {isPaid ? (
                       <Link href={`/listen/${c.id}`} className="btn btn-sm btn-outline" style={{ width: "100%", justifyContent: "center", display: "flex" }}>
-                        Read &amp; Listen
+                        Read &amp; Listen (Owned)
                       </Link>
                     ) : (
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                        <span style={{ fontSize: "0.85rem", color: "#64748b", lineHeight: 1.4 }}>Rs. 100<br/>200 Credits</span>
-                        <a href={`/buy?format=audio_chapter_${c.id}`} className="btn btn-sm" style={{ background: "#e0f2fe", color: "#0369a1", border: "none", fontWeight: 600, padding: "6px 16px" }}>
-                          Unlock Chapter
-                        </a>
+                      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.85rem", color: "#64748b" }}>
+                          <span>Price: <strong style={{ color: "#0f172a" }}>Rs. 100</strong> / 200 Cr</span>
+                        </div>
+                        <div style={{ display: "flex", gap: 8 }}>
+                          <a 
+                            href={`/buy?format=audio_chapter_${c.id}`} 
+                            className="btn btn-sm" 
+                            style={{ flex: 1, justifyContent: "center", background: "#e0f2fe", color: "#0369a1", border: "1px solid #bae6fd", fontWeight: 600, padding: "7px 8px", fontSize: "0.82rem", textAlign: "center" }}
+                          >
+                            BUY &middot; Rs. 100
+                          </a>
+                          <Link 
+                            href={`/listen/${c.id}`} 
+                            className="btn btn-sm" 
+                            style={{ flex: 1, justifyContent: "center", background: "#f0fdf4", color: "#166534", border: "1px solid #86efac", fontWeight: 600, padding: "7px 8px", fontSize: "0.82rem", textAlign: "center" }}
+                          >
+                            Temp. Access
+                          </Link>
+                        </div>
                       </div>
                     )}
                   </div>

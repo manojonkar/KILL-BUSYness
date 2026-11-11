@@ -17,35 +17,22 @@ export default async function ChapterPage({ params }: { params: { id: string } }
   const supabase = createClient();
   const adminClient = createAdminClient();
   const { data: { user } } = await supabase.auth.getUser();
-  
-  let isUnlocked = chapterId === 0;
-  let canWatchVideo = !!chapter.isAudioPublic || chapterId === 0;
-  const boughtAny = await hasPurchasedAnyBook(adminClient, user?.email || "");
-  if (boughtAny) {
-    isUnlocked = true;
-  }
-  if (!isUnlocked) {
-    isUnlocked = await hasPurchasedPdfChapter(adminClient, user?.email || "", chapter.id);
-  }
-  if (!isUnlocked && user) {
-    isUnlocked = await isChapterUnlocked(supabase, user.id, chapter.id);
-  }
 
-  if (!canWatchVideo) {
-    canWatchVideo = await hasPurchasedAudioBook(adminClient, user?.email || "", chapter.id);
-  }
-  if (!canWatchVideo && user) {
-    canWatchVideo = await hasRedeemedFullAudioBook(supabase, user.id) || await hasRedeemedAudioChapter(supabase, user.id, chapter.id);
-  }
+  // Temporary open access allows viewing immediately
+  const isUnlocked = true;
+  const canWatchVideo = true;
+
+  // Real purchase check to show permanent ownership vs temporary access banner
+  const hasPaidBook = await hasPurchasedAnyBook(adminClient, user?.email || "", true);
+  const hasPaidChapter = hasPaidBook || await hasPurchasedPdfChapter(adminClient, user?.email || "", chapter.id, true);
+  const hasPaidAudio = hasPaidBook || await hasPurchasedAudioBook(adminClient, user?.email || "", chapter.id, true);
 
   let totalPages = 0;
-  if (isUnlocked) {
-    try {
-      const metaPath = path.join(process.cwd(), "public/files/chapter_pages/metadata.json");
-      const meta = JSON.parse(fs.readFileSync(metaPath, "utf-8"));
-      totalPages = meta[chapter.id.toString()] || 0;
-    } catch(e) {}
-  }
+  try {
+    const metaPath = path.join(process.cwd(), "public/files/chapter_pages/metadata.json");
+    const meta = JSON.parse(fs.readFileSync(metaPath, "utf-8"));
+    totalPages = meta[chapter.id.toString()] || 0;
+  } catch(e) {}
 
   let reflectionBody = "";
   let readIds = new Set<number>();
@@ -53,13 +40,14 @@ export default async function ChapterPage({ params }: { params: { id: string } }
     readIds = await getChapterReads(supabase, user.id);
   }
 
-  if (user && isUnlocked) {
+  if (user) {
     await markChapterRead(supabase, chapter.id);
     await evaluateBadges(supabase, user.id);
     reflectionBody = await getReflection(supabase, user.id, chapter.id);
-    readIds.add(chapter.id); // optimistically update local set
+    readIds.add(chapter.id);
   }
   const boundSave = saveReflectionAction.bind(null, chapter.id);
+
   return (
     <>
       <AntiCopy />
@@ -79,38 +67,82 @@ export default async function ChapterPage({ params }: { params: { id: string } }
             </div>
           )}
         </div>
+
+        {/* Temporary Access & Buy Bar */}
+        <div style={{
+          marginBottom: 20,
+          padding: "14px 20px",
+          background: hasPaidChapter ? "#f8fafc" : "#f0fdf4",
+          border: hasPaidChapter ? "1px solid #cbd5e1" : "1px solid #86efac",
+          borderRadius: 8,
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          flexWrap: "wrap",
+          gap: 12
+        }}>
+          <div>
+            {hasPaidChapter ? (
+              <span style={{ color: "#0369a1", fontWeight: 600, fontSize: "0.92rem" }}>
+                ✓ You own lifetime access to this chapter
+              </span>
+            ) : (
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <span className="chip" style={{ background: "#22c55e", color: "#fff", fontWeight: 600, fontSize: "0.75rem" }}>
+                  Temp. Access Active
+                </span>
+                <span style={{ color: "#166534", fontSize: "0.9rem" }}>
+                  You are viewing this chapter with free open access.
+                </span>
+              </div>
+            )}
+          </div>
+          {!hasPaidChapter && (
+            <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+              <span style={{ fontSize: "0.85rem", color: "#475569" }}>
+                Own permanently:
+              </span>
+              <a
+                href={`/buy?format=pdf_chapter_${chapter.id}`}
+                className="btn btn-sm"
+                style={{ background: "#0369a1", color: "#fff", border: "none", fontWeight: 600, padding: "6px 14px", textDecoration: "none" }}
+              >
+                BUY Chapter &middot; Rs. 100
+              </a>
+              <a
+                href="/buy?format=ebook"
+                className="btn btn-sm"
+                style={{ background: "#e0f2fe", color: "#0369a1", border: "1px solid #bae6fd", fontWeight: 600, padding: "6px 14px", textDecoration: "none" }}
+              >
+                BUY Full eBook &middot; Rs. 999
+              </a>
+            </div>
+          )}
+        </div>
+
         <div className="card" style={{ padding: "30px 32px" }}>
           <span className="eyebrow">Chapter {chapter.num} &middot; ROAR: {chapter.roar}</span>
           <h3 style={{ fontSize: "1.5rem", marginBottom: 14 }}>{chapter.title}</h3>
           
-          {isUnlocked ? (
-            <div style={{ background: "#e2e8f0", padding: "20px 0", borderRadius: 8, marginTop: 24 }}>
-              {Array.from({ length: totalPages }).map((_, i) => (
-                <img key={i} src={`/files/chapter_pages/${chapter.id}/page_${i}.jpg`} style={{ width: "100%", maxWidth: 800, margin: "0 auto 16px auto", height: "auto", display: "block" }}  />
-              ))}
-            </div>
-          ) : (
-            <div style={{ marginTop: 24, padding: 24, background: "#f8fafc", borderRadius: 8, textAlign: "center", border: "1px solid #e2e8f0" }}>
-              <h4 style={{ marginBottom: 12 }}>Unlock Full Chapter</h4>
-              <p style={{ marginBottom: 20, fontSize: "0.95rem", color: "#475569" }}>
-                Purchase the eBook or this specific PDF chapter to unlock the text.
-              </p>
-              <div style={{ display: "flex", gap: 24, justifyContent: "center", alignItems: "center" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                  <span style={{ fontSize: "0.85rem", color: "#64748b", textAlign: "right", lineHeight: 1.4 }}>Rs. 999<br/>2000 Credits</span>
-                  <a href="/buy?format=ebook" className="btn btn-sm" style={{ background: "#e0f2fe", color: "#0369a1", border: "none", fontWeight: 600 }}>Read Full eBook</a>
-                </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                  <span style={{ fontSize: "0.85rem", color: "#64748b", textAlign: "right", lineHeight: 1.4 }}>Rs. 100<br/>200 Credits</span>
-                  <a href={`/buy?format=pdf_chapter_${chapter.id}`} className="btn btn-sm" style={{ background: "#e0f2fe", color: "#0369a1", border: "none", fontWeight: 600 }}>Read Chapter {chapter.num}</a>
-                </div>
+          <div style={{ background: "#e2e8f0", padding: "20px 0", borderRadius: 8, marginTop: 24 }}>
+            {Array.from({ length: totalPages }).map((_, i) => (
+              <img key={i} src={`/files/chapter_pages/${chapter.id}/page_${i}.jpg`} style={{ width: "100%", maxWidth: 800, margin: "0 auto 16px auto", height: "auto", display: "block" }}  />
+            ))}
+          </div>
+
+          {chapter.videoId && (
+            <div style={{ marginTop: 32, marginBottom: 24 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12, flexWrap: "wrap", gap: 8 }}>
+                <h4 style={{ margin: 0 }}>Watch Video Chapter</h4>
+                {!hasPaidAudio && (
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <span style={{ fontSize: "0.8rem", color: "#64748b" }}>Own video/audio:</span>
+                    <a href={`/buy?format=audio_chapter_${chapter.id}`} className="btn btn-sm" style={{ background: "#e0f2fe", color: "#0369a1", border: "1px solid #bae6fd", fontWeight: 600, padding: "4px 10px", fontSize: "0.8rem" }}>
+                      BUY Audio Ch. &middot; Rs. 100
+                    </a>
+                  </div>
+                )}
               </div>
-            </div>
-          )}
-          
-          {canWatchVideo && chapter.videoId ? (
-            <div style={{ marginTop: 24, marginBottom: 24 }}>
-              <h4 style={{ marginBottom: 12 }}>Watch Chapter</h4>
               <div style={{ position: "relative", paddingBottom: "56.25%", height: 0, overflow: "hidden", borderRadius: 8 }}>
                 <iframe
                   style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%" }}
@@ -122,45 +154,23 @@ export default async function ChapterPage({ params }: { params: { id: string } }
                 ></iframe>
               </div>
             </div>
-          ) : !canWatchVideo ? (
-            <div style={{ marginTop: 24, padding: 24, background: "#f8fafc", borderRadius: 8, textAlign: "center", border: "1px solid #e2e8f0" }}>
-              <h4 style={{ marginBottom: 12 }}>Watch Video Chapter</h4>
-              <p style={{ marginBottom: 20, fontSize: "0.95rem", color: "#475569" }}>
-                Purchase the AudioBook or this specific Audio Chapter to unlock the video version.
-              </p>
-              <div style={{ display: "flex", gap: 24, justifyContent: "center", alignItems: "center" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                  <span style={{ fontSize: "0.85rem", color: "#64748b", textAlign: "right", lineHeight: 1.4 }}>Rs. 999<br/>2000 Credits</span>
-                  <a href="/buy?format=audiobook" className="btn btn-sm" style={{ background: "#e0f2fe", color: "#0369a1", border: "none", fontWeight: 600 }}>Read Full AudioBook</a>
-                </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                  <span style={{ fontSize: "0.85rem", color: "#64748b", textAlign: "right", lineHeight: 1.4 }}>Rs. 100<br/>200 Credits</span>
-                  <a href={`/buy?format=audio_chapter_${chapter.id}`} className="btn btn-sm" style={{ background: "#e0f2fe", color: "#0369a1", border: "none", fontWeight: 600 }}>Read Chapter {chapter.num}</a>
-                </div>
-              </div>
-            </div>
-          ) : null}
-
-          {isUnlocked && (
-            <>
-              <ReflectBox prompt={chapter.reflect} initialBody={reflectionBody} loggedIn={!!user} action={boundSave} />
-              
-              <div style={{ marginTop: 40, paddingTop: 32, borderTop: "2px solid #e2e8f0" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#f8fafc", padding: 24, borderRadius: 8, border: "1px solid #e2e8f0" }}>
-                  <div>
-                    <h4 style={{ margin: "0 0 4px 0", fontSize: "1.1rem" }}>Chapter Quiz</h4>
-                    <p style={{ margin: 0, color: "#64748b", fontSize: "0.95rem" }}>Test your knowledge and earn up to 100 MI Credits!</p>
-                  </div>
-                  <a href={`/quiz/${chapter.id}`} className="btn" style={{ background: "#0f766e", color: "white" }}>
-                    Take Chapter Quiz
-                  </a>
-                </div>
-              </div>
-            </>
           )}
+
+          <ReflectBox prompt={chapter.reflect} initialBody={reflectionBody} loggedIn={!!user} action={boundSave} />
+          
+          <div style={{ marginTop: 40, paddingTop: 32, borderTop: "2px solid #e2e8f0" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#f8fafc", padding: 24, borderRadius: 8, border: "1px solid #e2e8f0" }}>
+              <div>
+                <h4 style={{ margin: "0 0 4px 0", fontSize: "1.1rem" }}>Chapter Quiz</h4>
+                <p style={{ margin: 0, color: "#64748b", fontSize: "0.95rem" }}>Test your knowledge and earn up to 100 MI Credits!</p>
+              </div>
+              <a href={`/quiz/${chapter.id}`} className="btn" style={{ background: "#0f766e", color: "white" }}>
+                Take Chapter Quiz
+              </a>
+            </div>
+          </div>
         </div>
       </main>
     </>
   );
 }
-

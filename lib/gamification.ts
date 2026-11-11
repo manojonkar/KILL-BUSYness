@@ -103,9 +103,8 @@ export async function getReflection(supabase: SupabaseClient, userId: string, ch
 }
 
 export async function isChapterUnlocked(supabase: SupabaseClient, userId: string, chapterId: number) {
-  // During 30-day temporary open access, all chapters unlock freely
-  const TEMPORARY_OPEN_ACCESS_END = new Date("2026-12-11T23:59:59Z").getTime();
-  if (Date.now() < TEMPORARY_OPEN_ACCESS_END) return true;
+  // Temporary open access allows all chapters to unlock freely
+  return true;
 
   const { data } = await supabase
     .from("redemptions")
@@ -117,8 +116,7 @@ export async function isChapterUnlocked(supabase: SupabaseClient, userId: string
 }
 
 export async function hasRedeemedAudioChapter(supabase: SupabaseClient, userId: string, chapterId: number) {
-  const TEMPORARY_OPEN_ACCESS_END = new Date("2026-12-11T23:59:59Z").getTime();
-  if (Date.now() < TEMPORARY_OPEN_ACCESS_END) return true;
+  return true;
 
   const chNum = chapterId === 0 ? "INTRO" : chapterId.toString().padStart(2, "0");
   const { data } = await supabase
@@ -131,8 +129,7 @@ export async function hasRedeemedAudioChapter(supabase: SupabaseClient, userId: 
 }
 
 export async function hasRedeemedFullAudioBook(supabase: SupabaseClient, userId: string) {
-  const TEMPORARY_OPEN_ACCESS_END = new Date("2026-12-11T23:59:59Z").getTime();
-  if (Date.now() < TEMPORARY_OPEN_ACCESS_END) return true;
+  return true;
 
   const { data } = await supabase
     .from("redemptions")

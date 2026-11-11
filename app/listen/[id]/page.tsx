@@ -1,10 +1,9 @@
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import Header from "@/components/Header";
 import AntiCopy from "@/components/AntiCopy";
 import Link from "next/link";
 import { CHAPTERS } from "@/lib/chapters";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
-import { hasRedeemedAudioChapter, hasRedeemedFullAudioBook } from "@/lib/gamification";
 import { hasPurchasedAudioBook } from "@/lib/book";
 
 export default async function ListenChapterPage({ params }: { params: { id: string } }) {
@@ -16,19 +15,8 @@ export default async function ListenChapterPage({ params }: { params: { id: stri
   const adminClient = createAdminClient();
   const { data: { user } } = await supabase.auth.getUser();
 
-  let canListen = !!chapter.isAudioPublic;
-  if (!canListen) {
-    canListen = await hasPurchasedAudioBook(adminClient, user?.email || "", chapter.id);
-  }
-  if (!canListen && user) {
-    canListen = await hasRedeemedFullAudioBook(supabase, user.id)
-             || await hasRedeemedAudioChapter(supabase, user.id, chapter.id);
-  }
-
-  // Redirect non-purchasers directly to the buy page for this chapter when access is expired
-  if (!canListen) {
-    redirect(`/buy?format=audio_chapter_${chapter.id}`);
-  }
+  // Check permanent ownership (ignoring temporary access)
+  const hasPaidAudio = await hasPurchasedAudioBook(adminClient, user?.email || "", chapter.id, true);
 
   const idx = CHAPTERS.findIndex((c) => c.id === chapterId);
   const prev = idx > 0 ? CHAPTERS[idx - 1] : null;
@@ -47,6 +35,58 @@ export default async function ListenChapterPage({ params }: { params: { id: stri
             {prev && <Link href={`/listen/${prev.id}`} className="btn btn-sm btn-outline">&larr; Prev</Link>}
             {next && <Link href={`/listen/${next.id}`} className="btn btn-sm btn-outline">Next &rarr;</Link>}
           </div>
+        </div>
+
+        {/* Temporary Access & Buy Bar */}
+        <div style={{
+          marginBottom: 20,
+          padding: "14px 20px",
+          background: hasPaidAudio ? "#f8fafc" : "#f0fdf4",
+          border: hasPaidAudio ? "1px solid #cbd5e1" : "1px solid #86efac",
+          borderRadius: 8,
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          flexWrap: "wrap",
+          gap: 12
+        }}>
+          <div>
+            {hasPaidAudio ? (
+              <span style={{ color: "#0369a1", fontWeight: 600, fontSize: "0.92rem" }}>
+                ✓ You own lifetime access to this audio chapter
+              </span>
+            ) : (
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <span className="chip" style={{ background: "#22c55e", color: "#fff", fontWeight: 600, fontSize: "0.75rem" }}>
+                  Temp. Access Active
+                </span>
+                <span style={{ color: "#166534", fontSize: "0.9rem" }}>
+                  You are listening to this chapter with free open access.
+                </span>
+              </div>
+            )}
+          </div>
+          {!hasPaidAudio && (
+            <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+              <span style={{ fontSize: "0.85rem", color: "#475569" }}>
+                Own permanently:
+              </span>
+              <a
+                href={`/buy?format=audio_chapter_${chapter.id}`}
+                className="btn btn-sm"
+                style={{ background: "#0369a1", color: "#fff", border: "none", fontWeight: 600, padding: "6px 14px", textDecoration: "none" }}
+              >
+                BUY Audio Ch. &middot; Rs. 100
+              </a>
+              <a
+                href="/buy?format=audiobook"
+                className="btn btn-sm"
+                style={{ background: "#e0f2fe", color: "#0369a1", border: "1px solid #bae6fd", fontWeight: 600, padding: "6px 14px", textDecoration: "none" }}
+              >
+                BUY Full AudioBook &middot; Rs. 999
+              </a>
+            </div>
+          )}
         </div>
 
         <div className="card" style={{ padding: "30px 32px" }}>
