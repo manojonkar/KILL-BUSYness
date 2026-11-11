@@ -103,15 +103,44 @@ export async function getReflection(supabase: SupabaseClient, userId: string, ch
 }
 
 export async function isChapterUnlocked(supabase: SupabaseClient, userId: string, chapterId: number) {
-  return true;
+  // During 30-day temporary open access, all chapters unlock freely
+  const TEMPORARY_OPEN_ACCESS_END = new Date("2026-12-11T23:59:59Z").getTime();
+  if (Date.now() < TEMPORARY_OPEN_ACCESS_END) return true;
+
+  const { data } = await supabase
+    .from("redemptions")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("item", `Chapter ${chapterId} Unlock`)
+    .maybeSingle();
+  return !!data;
 }
 
 export async function hasRedeemedAudioChapter(supabase: SupabaseClient, userId: string, chapterId: number) {
-  return true;
+  const TEMPORARY_OPEN_ACCESS_END = new Date("2026-12-11T23:59:59Z").getTime();
+  if (Date.now() < TEMPORARY_OPEN_ACCESS_END) return true;
+
+  const chNum = chapterId === 0 ? "INTRO" : chapterId.toString().padStart(2, "0");
+  const { data } = await supabase
+    .from("redemptions")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("item", `Audio Chapter ${chNum}`)
+    .maybeSingle();
+  return !!data;
 }
 
 export async function hasRedeemedFullAudioBook(supabase: SupabaseClient, userId: string) {
-  return true;
+  const TEMPORARY_OPEN_ACCESS_END = new Date("2026-12-11T23:59:59Z").getTime();
+  if (Date.now() < TEMPORARY_OPEN_ACCESS_END) return true;
+
+  const { data } = await supabase
+    .from("redemptions")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("item", "Full AudioBook")
+    .maybeSingle();
+  return !!data;
 }
 
 export async function unlockChapter(supabase: SupabaseClient, userId: string, chapterId: number) {

@@ -16,7 +16,19 @@ export default async function ListenChapterPage({ params }: { params: { id: stri
   const adminClient = createAdminClient();
   const { data: { user } } = await supabase.auth.getUser();
 
-  const canListen = true;
+  let canListen = !!chapter.isAudioPublic;
+  if (!canListen) {
+    canListen = await hasPurchasedAudioBook(adminClient, user?.email || "", chapter.id);
+  }
+  if (!canListen && user) {
+    canListen = await hasRedeemedFullAudioBook(supabase, user.id)
+             || await hasRedeemedAudioChapter(supabase, user.id, chapter.id);
+  }
+
+  // Redirect non-purchasers directly to the buy page for this chapter when access is expired
+  if (!canListen) {
+    redirect(`/buy?format=audio_chapter_${chapter.id}`);
+  }
 
   const idx = CHAPTERS.findIndex((c) => c.id === chapterId);
   const prev = idx > 0 ? CHAPTERS[idx - 1] : null;

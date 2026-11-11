@@ -56,20 +56,6 @@ export async function login(formData: FormData) {
       });
 
       if (!createError && created?.user) {
-        // Also grant full book access order automatically so all chapters open smoothly
-        await adminClient.from("book_orders").insert({ 
-          ref: "AUTO-" + Date.now(),
-          name: name, 
-          phone: "0000", 
-          email: email, 
-          format: "ebook", 
-          notes: "[FORMAT:audiobook] Auto granted passwordless executive access",
-          amount: 0, 
-          unit_price: 0,
-          quantity: 1,
-          status: "paid" 
-        });
-
         const { error: newSignInError } = await supabase.auth.signInWithPassword({ 
           email, 
           password: autoPassword 

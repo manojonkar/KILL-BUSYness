@@ -54,16 +54,53 @@ export const PROMO_CODES: Record<string, PromoCode> = {
   "LAURUS": { discountPercent: 10 }
 };
 
+// 30-Day Temporary Open Access Window (Ends December 11, 2026 23:59:59 UTC)
+export const TEMPORARY_OPEN_ACCESS_END = new Date("2026-12-11T23:59:59Z").getTime();
+
+export function isTemporaryAccessActive(): boolean {
+  return Date.now() < TEMPORARY_OPEN_ACCESS_END;
+}
+
 export async function hasPurchasedAnyBook(supabase: SupabaseClient, email: string): Promise<boolean> {
-  return true;
+  if (isTemporaryAccessActive()) return true;
+  if (!email) return false;
+  const { data } = await supabase
+    .from("book_orders")
+    .select("format, notes")
+    .ilike("email", email)
+    .in("status", ["paid", "dispatched"]);
+  
+  if (!data || data.length === 0) return false;
+  return data.some(d => d.format === "ebook" || d.format === "paperback" || d.format === "audiobook" || (d.notes && d.notes.includes("[FORMAT:audiobook]")));
 }
 
 export async function hasPurchasedAudioBook(supabase: SupabaseClient, email: string, chapterId?: number): Promise<boolean> {
-  return true;
+  if (isTemporaryAccessActive()) return true;
+  if (!email) return false;
+  const { data } = await supabase
+    .from("book_orders")
+    .select("format, notes")
+    .ilike("email", email)
+    .in("status", ["paid", "dispatched"]);
+  if (!data || data.length === 0) return false;
+  
+  return data.some(d => {
+    if (d.format === 'audiobook' || (d.notes && d.notes.includes('[FORMAT:audiobook]'))) return true;
+    if (chapterId !== undefined && (d.format === `audio_chapter_${chapterId}` || (d.notes && d.notes.includes(`[FORMAT:audio_chapter_${chapterId}]`)))) return true;
+    return false;
+  });
 }
 
 export async function hasPurchasedPdfChapter(supabase: SupabaseClient, email: string, chapterId: number): Promise<boolean> {
-  return true;
+  if (isTemporaryAccessActive()) return true;
+  if (!email) return false;
+  const { data } = await supabase
+    .from("book_orders")
+    .select("format, notes")
+    .ilike("email", email)
+    .in("status", ["paid", "dispatched"]);
+  if (!data || data.length === 0) return false;
+  return data.some(d => d.format === `pdf_chapter_${chapterId}` || (d.notes && d.notes.includes(`[FORMAT:pdf_chapter_${chapterId}]`)));
 }
 export async function getSettings(supabase: SupabaseClient) {
   const { data } = await supabase.from("site_settings").select("key, value");
