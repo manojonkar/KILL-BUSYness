@@ -7,17 +7,14 @@ export default function LoginPage({ searchParams }: { searchParams: { error?: st
       <Header active="" />
       <main>
         <div className="section-head">
-          <span className="eyebrow">Welcome back</span>
-          <h2>Log in to your portal</h2>
-          <p>Pick up your reading streak, XP, and Organization Audit right where you left off.</p>
+          <span className="eyebrow">Instant Access</span>
+          <h2>Access the KILL BUSYness Portal</h2>
+          <p>Read the book, listen to all chapters, and run your Organization Audit smoothly with zero password friction.</p>
         </div>
-        <div className="card" style={{ padding: 30, maxWidth: 440 }}>
+        <div className="card" style={{ padding: 30, maxWidth: 440, margin: "0 auto" }}>
           <LoginForm initialError={searchParams?.error} initialMessage={searchParams?.message} />
-          <p style={{ fontSize: ".82rem", color: "var(--ink-soft)", marginTop: 12 }}>
-            <a href="/forgot" style={{ color: "var(--coral-ink)", fontWeight: 700 }}>Forgot your password?</a>
-          </p>
-          <p style={{ fontSize: ".82rem", color: "var(--ink-soft)", marginTop: 8 }}>
-            New here? <a href="/register" style={{ color: "var(--coral-ink)", fontWeight: 700 }}>Register your organization</a>
+          <p style={{ fontSize: ".82rem", color: "var(--ink-soft)", marginTop: 16, textAlign: "center" }}>
+            Unrestricted access enabled for all executive modules, chapters, and audio.
           </p>
         </div>
       </main>

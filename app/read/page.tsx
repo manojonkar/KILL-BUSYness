@@ -12,25 +12,9 @@ export default async function ReadIndex() {
     const adminClient = createAdminClient();
     const { data: { user } } = await supabase.auth.getUser();
 
-    let hasFullAccess = false;
+    const hasFullAccess = true;
     const accessMap = new Map<number, boolean>();
-
-    if (user) {
-      hasFullAccess = await hasPurchasedAnyBook(adminClient, user.email || "");
-      
-      if (!hasFullAccess) {
-        await Promise.all(CHAPTERS.map(async (c) => {
-          let hasAccess = false;
-          hasAccess = await hasPurchasedPdfChapter(adminClient, user.email || "", c.id);
-          if (!hasAccess) {
-            hasAccess = await isChapterUnlocked(supabase, user.id, c.id);
-          }
-          accessMap.set(c.id, hasAccess);
-        }));
-      } else {
-        CHAPTERS.forEach(c => accessMap.set(c.id, true));
-      }
-    }
+    CHAPTERS.forEach(c => accessMap.set(c.id, true));
 
     return (
       <>

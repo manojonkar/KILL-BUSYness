@@ -14,27 +14,8 @@ export default async function ListenLibraryPage() {
     const adminClient = createAdminClient();
     const { data: { user } } = await supabase.auth.getUser();
 
-    let fullBookPurchased = false;
-    let fullBookRedeemed = false;
-    if (user) {
-      fullBookPurchased = await hasPurchasedAudioBook(adminClient, user.email || "");
-      fullBookRedeemed = await hasRedeemedFullAudioBook(supabase, user.id);
-    }
-
-    const hasFullAccess = fullBookPurchased || fullBookRedeemed;
-
-    const chapterAccess = await Promise.all(
-      CHAPTERS.map(async (c) => {
-        let access = !!c.isAudioPublic || hasFullAccess;
-        if (!access && user) {
-          access = await hasPurchasedAudioBook(adminClient, user.email || "", c.id)
-                || await hasRedeemedAudioChapter(supabase, user.id, c.id);
-        }
-        return { id: c.id, hasAccess: access };
-      })
-    );
-
-    const accessMap = new Map(chapterAccess.map((a) => [a.id, a.hasAccess]));
+    const hasFullAccess = true;
+    const accessMap = new Map(CHAPTERS.map((c) => [c.id, true]));
 
     return (
       <>

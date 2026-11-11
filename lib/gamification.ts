@@ -103,34 +103,15 @@ export async function getReflection(supabase: SupabaseClient, userId: string, ch
 }
 
 export async function isChapterUnlocked(supabase: SupabaseClient, userId: string, chapterId: number) {
-  const { data } = await supabase
-    .from("redemptions")
-    .select("id")
-    .eq("user_id", userId)
-    .eq("item", `Chapter ${chapterId} Unlock`)
-    .maybeSingle();
-  return !!data;
+  return true;
 }
 
 export async function hasRedeemedAudioChapter(supabase: SupabaseClient, userId: string, chapterId: number) {
-  const chNum = chapterId === 0 ? "INTRO" : chapterId.toString().padStart(2, "0");
-  const { data } = await supabase
-    .from("redemptions")
-    .select("id")
-    .eq("user_id", userId)
-    .eq("item", `Audio Chapter ${chNum}`)
-    .maybeSingle();
-  return !!data;
+  return true;
 }
 
 export async function hasRedeemedFullAudioBook(supabase: SupabaseClient, userId: string) {
-  const { data } = await supabase
-    .from("redemptions")
-    .select("id")
-    .eq("user_id", userId)
-    .eq("item", "Full AudioBook")
-    .maybeSingle();
-  return !!data;
+  return true;
 }
 
 export async function unlockChapter(supabase: SupabaseClient, userId: string, chapterId: number) {

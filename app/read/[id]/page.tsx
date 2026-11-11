@@ -18,25 +18,8 @@ export default async function ChapterPage({ params }: { params: { id: string } }
   const adminClient = createAdminClient();
   const { data: { user } } = await supabase.auth.getUser();
   
-  let isUnlocked = chapterId === 0;
-  let canWatchVideo = !!chapter.isAudioPublic || chapterId === 0;
-  if (user) {
-    const boughtAny = await hasPurchasedAnyBook(adminClient, user.email || "");
-    if (boughtAny) isUnlocked = true;
-    if (!isUnlocked) {
-      isUnlocked = await hasPurchasedPdfChapter(adminClient, user.email || "", chapter.id);
-    }
-    if (!isUnlocked) {
-      isUnlocked = await isChapterUnlocked(supabase, user.id, chapter.id);
-    }
-
-    if (!canWatchVideo) {
-      canWatchVideo = await hasPurchasedAudioBook(adminClient, user.email || "", chapter.id);
-    }
-    if (!canWatchVideo) {
-      canWatchVideo = await hasRedeemedFullAudioBook(supabase, user.id) || await hasRedeemedAudioChapter(supabase, user.id, chapter.id);
-    }
-  }
+  const isUnlocked = true;
+  const canWatchVideo = true;
 
   let totalPages = 0;
   if (isUnlocked) {

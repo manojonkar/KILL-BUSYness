@@ -55,42 +55,15 @@ export const PROMO_CODES: Record<string, PromoCode> = {
 };
 
 export async function hasPurchasedAnyBook(supabase: SupabaseClient, email: string): Promise<boolean> {
-  if (!email) return false;
-  const { data } = await supabase
-    .from("book_orders")
-    .select("format, notes")
-    .ilike("email", email)
-    .in("status", ["paid", "dispatched"]);
-  
-  if (!data || data.length === 0) return false;
-  return data.some(d => d.format === "ebook" || d.format === "paperback" || d.format === "audiobook" || (d.notes && d.notes.includes("[FORMAT:audiobook]")));
+  return true;
 }
 
 export async function hasPurchasedAudioBook(supabase: SupabaseClient, email: string, chapterId?: number): Promise<boolean> {
-  if (!email) return false;
-  const { data } = await supabase
-    .from("book_orders")
-    .select("format, notes")
-    .ilike("email", email)
-    .in("status", ["paid", "dispatched"]);
-  if (!data || data.length === 0) return false;
-  
-  return data.some(d => {
-    if (d.format === 'audiobook' || (d.notes && d.notes.includes('[FORMAT:audiobook]'))) return true;
-    if (chapterId !== undefined && (d.format === `audio_chapter_${chapterId}` || (d.notes && d.notes.includes(`[FORMAT:audio_chapter_${chapterId}]`)))) return true;
-    return false;
-  });
+  return true;
 }
 
 export async function hasPurchasedPdfChapter(supabase: SupabaseClient, email: string, chapterId: number): Promise<boolean> {
-  if (!email) return false;
-  const { data } = await supabase
-    .from("book_orders")
-    .select("format, notes")
-    .ilike("email", email)
-    .in("status", ["paid", "dispatched"]);
-  if (!data || data.length === 0) return false;
-  return data.some(d => d.format === `pdf_chapter_${chapterId}` || (d.notes && d.notes.includes(`[FORMAT:pdf_chapter_${chapterId}]`)));
+  return true;
 }
 export async function getSettings(supabase: SupabaseClient) {
   const { data } = await supabase.from("site_settings").select("key, value");

@@ -1,7 +1,6 @@
 "use client";
 import { useState } from "react";
 import { login } from "./actions";
-
 import { useRouter } from "next/navigation";
 
 export default function LoginForm({ initialError, initialMessage }: { initialError?: string, initialMessage?: string }) {
@@ -22,6 +21,7 @@ export default function LoginForm({ initialError, initialMessage }: { initialErr
         setError(res.error);
         setLoading(false);
       } else if (res && "redirect" in res && res.redirect) {
+        setMessage("Access granted! Opening your portal...");
         router.push(res.redirect);
       }
     } catch (err: any) {
@@ -36,15 +36,18 @@ export default function LoginForm({ initialError, initialMessage }: { initialErr
       {message && <p style={{ color: "#2B8C44", fontSize: ".85rem", marginBottom: 14 }}>{message}</p>}
       <form onSubmit={handleSubmit}>
         <div className="field" style={{ marginBottom: 14 }}>
-          <label>Email</label>
-          <input name="email" type="email" required placeholder="you@company.com" />
+          <label>Email Address</label>
+          <input name="email" type="email" required placeholder="you@company.com" autoFocus />
+          <span style={{ fontSize: "0.75rem", color: "var(--ink-soft)", marginTop: 4, display: "block" }}>
+            Enter your email ID for instant access. No password needed.
+          </span>
         </div>
         <div className="field" style={{ marginBottom: 18 }}>
-          <label>Password</label>
-          <input name="password" type="password" required placeholder="••••••••" />
+          <label>Your Name (Optional)</label>
+          <input name="name" type="text" placeholder="e.g. Manoj" />
         </div>
-        <button className="btn btn-primary" type="submit" style={{ width: "100%" }} disabled={loading}>
-          {loading ? "Logging In..." : "Log In"}
+        <button className="btn btn-primary" type="submit" style={{ width: "100%", padding: "12px" }} disabled={loading}>
+          {loading ? "Opening Portal..." : "Enter Portal ➔"}
         </button>
       </form>
     </>
