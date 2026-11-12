@@ -62,7 +62,7 @@ export function isTemporaryAccessActive(): boolean {
 }
 
 export async function hasPurchasedAnyBook(supabase: SupabaseClient, email: string, ignoreTemp = false): Promise<boolean> {
-  if (!ignoreTemp && isTemporaryAccessActive()) return true;
+  // Whole book access is strictly paid/owned — temporary access applies to individual chapters only
   if (!email) return false;
   const { data } = await supabase
     .from("book_orders")
@@ -75,7 +75,8 @@ export async function hasPurchasedAnyBook(supabase: SupabaseClient, email: strin
 }
 
 export async function hasPurchasedAudioBook(supabase: SupabaseClient, email: string, chapterId?: number, ignoreTemp = false): Promise<boolean> {
-  if (!ignoreTemp && isTemporaryAccessActive()) return true;
+  // If checking a specific chapter, temporary access grants access; for the full audiobook (chapterId undefined), require real purchase
+  if (!ignoreTemp && chapterId !== undefined && isTemporaryAccessActive()) return true;
   if (!email) return false;
   const { data } = await supabase
     .from("book_orders")

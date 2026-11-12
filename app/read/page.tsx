@@ -11,12 +11,12 @@ export default async function ReadIndex() {
     const adminClient = createAdminClient();
     const { data: { user } } = await supabase.auth.getUser();
 
-    // Check permanent purchase status (ignoring temporary access)
-    const isPermanentlyOwned = await hasPurchasedAnyBook(adminClient, user?.email || "", true);
+    // Check permanent purchase status for the whole book (no temp access for the whole book)
+    const hasFullAccess = await hasPurchasedAnyBook(adminClient, user?.email || "", true);
     
     // Check chapter permanent purchase status
     const paidChapters = new Set<number>();
-    if (isPermanentlyOwned) {
+    if (hasFullAccess) {
       CHAPTERS.forEach(c => paidChapters.add(c.id));
     } else {
       await Promise.all(CHAPTERS.map(async (c) => {
@@ -33,22 +33,22 @@ export default async function ReadIndex() {
             <span className="eyebrow">The Book, Reimagined</span>
             <h2>Read KILL BUSYness</h2>
             <p>
-              Experience the complete book through beautifully rendered PDF pages. Purchase the full eBook or individual chapters, or enjoy free instant reading via Temporary Access.
+              Experience the complete book through beautifully rendered PDF pages. Purchase the full eBook, or enjoy free instant reading of any chapter via Temporary Access.
             </p>
           </div>
 
-          {/* ── Full eBook ── */}
+          {/* ── Full eBook (Paid Only) ── */}
           <div className="card" style={{ marginBottom: 40, overflow: "hidden" }}>
             <div style={{ padding: "24px 28px 18px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 16 }}>
               <div>
                 <span className="eyebrow">Complete eBook</span>
                 <h3 style={{ margin: "6px 0 4px", fontSize: "1.35rem" }}>KILL BUSYness — Full eBook</h3>
                 <p style={{ margin: 0, color: "#475569", fontSize: "0.92rem" }}>
-                  The complete 154-page book. Available with full online reader.
+                  The complete 154-page book with dedicated portal reader.
                 </p>
               </div>
 
-              {isPermanentlyOwned ? (
+              {hasFullAccess ? (
                 <span className="chip level" style={{ flexShrink: 0 }}>Owned &middot; Lifetime Access</span>
               ) : (
                 <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", flexShrink: 0 }}>
@@ -59,28 +59,31 @@ export default async function ReadIndex() {
                   <a 
                     href="/buy?format=ebook" 
                     className="btn" 
-                    style={{ background: "#0369a1", color: "#fff", border: "none", fontWeight: 600, padding: "8px 18px", textDecoration: "none" }}
+                    style={{ background: "#0369a1", color: "#fff", border: "none", fontWeight: 600, padding: "8px 20px", textDecoration: "none" }}
                   >
-                    BUY eBook — Rs. 999
-                  </a>
-                  <a 
-                    href="#reader-container" 
-                    className="btn" 
-                    style={{ background: "#f0fdf4", color: "#166534", border: "1px solid #86efac", fontWeight: 600, padding: "8px 18px", textDecoration: "none" }}
-                  >
-                    Temp. Access (Free) ➔
+                    BUY Full eBook — Rs. 999
                   </a>
                 </div>
               )}
             </div>
 
-            {/* eBook Reader container accessible directly via Temp Access or Paid */}
-            <div id="reader-container" style={{ height: "82vh", background: "#e2e8f0", borderTop: "1px solid #cbd5e1" }}>
-              <EBookReader totalPages={154} />
-            </div>
+            {hasFullAccess ? (
+              <div style={{ height: "82vh", background: "#e2e8f0", borderTop: "1px solid #cbd5e1" }}>
+                <EBookReader totalPages={154} />
+              </div>
+            ) : (
+              <div style={{ margin: "20px 28px 28px", padding: 24, background: "#f8fafc", borderRadius: 10, border: "1px dashed #cbd5e1", textAlign: "center" }}>
+                <p style={{ margin: "0 0 16px", color: "#64748b", fontSize: "0.95rem" }}>
+                  Purchase the Full eBook to unlock the complete continuous 154-page reader, or read individual chapters below for free with Temporary Access.
+                </p>
+                <a href="/buy?format=ebook" className="btn" style={{ background: "#0369a1", color: "#fff", border: "none", fontWeight: 600 }}>
+                  Get Full eBook — Rs. 999
+                </a>
+              </div>
+            )}
           </div>
 
-          {/* ── Chapter by Chapter ── */}
+          {/* ── Chapter by Chapter (Temp Access + BUY) ── */}
           <div style={{ marginBottom: 20 }}>
             <h3 style={{ fontSize: "1.1rem", color: "#0f172a", marginBottom: 4 }}>Read Chapter by Chapter</h3>
             <p style={{ color: "#475569", fontSize: "0.9rem", margin: 0 }}>

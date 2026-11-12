@@ -3,6 +3,7 @@ import Header from "@/components/Header";
 import { CHAPTERS } from "@/lib/chapters";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { hasPurchasedAudioBook } from "@/lib/book";
+import { hasRedeemedFullAudioBook } from "@/lib/gamification";
 
 const FULL_AUDIOBOOK_VIDEO_ID = "ESwDzvA9mCg";
 
@@ -12,11 +13,13 @@ export default async function ListenLibraryPage() {
     const adminClient = createAdminClient();
     const { data: { user } } = await supabase.auth.getUser();
 
-    // Check lifetime purchase status (ignoring temporary access)
-    const isPermanentlyOwned = await hasPurchasedAudioBook(adminClient, user?.email || "", undefined, true);
+    // Check lifetime purchase status for full book (no temp access for the whole audiobook)
+    const fullBookPurchased = await hasPurchasedAudioBook(adminClient, user?.email || "", undefined, true);
+    const fullBookRedeemed = user ? await hasRedeemedFullAudioBook(supabase, user.id) : false;
+    const hasFullAccess = fullBookPurchased || fullBookRedeemed;
 
     const paidChapters = new Set<number>();
-    if (isPermanentlyOwned) {
+    if (hasFullAccess) {
       CHAPTERS.forEach(c => paidChapters.add(c.id));
     } else {
       await Promise.all(
@@ -34,10 +37,10 @@ export default async function ListenLibraryPage() {
           <div className="section-head">
             <span className="eyebrow">Audio Experience</span>
             <h2>Listen to KILL BUSYness</h2>
-            <p>Experience the complete book through audio and video. Purchase the full AudioBook, or enjoy instant playback via Temporary Access.</p>
+            <p>Experience the complete book through audio and video. Purchase the full AudioBook, or enjoy instant listening of any chapter via Temporary Access.</p>
           </div>
 
-          {/* ── Full AudioBook ── */}
+          {/* ── Full AudioBook (Paid Only) ── */}
           <div className="card" style={{ marginBottom: 40, overflow: "hidden" }}>
             <div style={{ padding: "24px 28px 18px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 16 }}>
               <div>
@@ -46,7 +49,7 @@ export default async function ListenLibraryPage() {
                 <p style={{ margin: 0, color: "#475569", fontSize: "0.92rem" }}>The complete book in one sitting. All chapters, back to back.</p>
               </div>
 
-              {isPermanentlyOwned ? (
+              {hasFullAccess ? (
                 <span className="chip level" style={{ flexShrink: 0 }}>Owned &middot; Lifetime Access</span>
               ) : (
                 <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", flexShrink: 0 }}>
@@ -57,34 +60,37 @@ export default async function ListenLibraryPage() {
                   <a 
                     href="/buy?format=audiobook" 
                     className="btn" 
-                    style={{ background: "#0369a1", color: "#fff", border: "none", fontWeight: 600, padding: "8px 18px", textDecoration: "none" }}
+                    style={{ background: "#0369a1", color: "#fff", border: "none", fontWeight: 600, padding: "8px 20px", textDecoration: "none" }}
                   >
-                    BUY AudioBook — Rs. 999
-                  </a>
-                  <a 
-                    href="#audio-player-container" 
-                    className="btn" 
-                    style={{ background: "#f0fdf4", color: "#166534", border: "1px solid #86efac", fontWeight: 600, padding: "8px 18px", textDecoration: "none" }}
-                  >
-                    Temp. Access (Free) ➔
+                    BUY Full AudioBook — Rs. 999
                   </a>
                 </div>
               )}
             </div>
 
-            {/* AudioBook player container accessible directly via Temp Access or Paid */}
-            <div id="audio-player-container" style={{ position: "relative", paddingTop: "56.25%", background: "#000", borderTop: "1px solid #cbd5e1" }}>
-              <iframe
-                src={`https://www.youtube.com/embed/${FULL_AUDIOBOOK_VIDEO_ID}?rel=0&modestbranding=1&cc_load_policy=0&iv_load_policy=3`}
-                title="KILL BUSYness — Full AudioBook"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-                style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", border: "none" }}
-              />
-            </div>
+            {hasFullAccess ? (
+              <div style={{ position: "relative", paddingTop: "56.25%", background: "#000", borderTop: "1px solid #cbd5e1" }}>
+                <iframe
+                  src={`https://www.youtube.com/embed/${FULL_AUDIOBOOK_VIDEO_ID}?rel=0&modestbranding=1&cc_load_policy=0&iv_load_policy=3`}
+                  title="KILL BUSYness — Full AudioBook"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                  style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", border: "none" }}
+                />
+              </div>
+            ) : (
+              <div style={{ margin: "20px 28px 28px", padding: 24, background: "#f8fafc", borderRadius: 10, border: "1px dashed #cbd5e1", textAlign: "center" }}>
+                <p style={{ margin: "0 0 16px", color: "#64748b", fontSize: "0.95rem" }}>
+                  Purchase the Full AudioBook to unlock the complete continuous recording, or listen to individual chapters below for free with Temporary Access.
+                </p>
+                <a href="/buy?format=audiobook" className="btn" style={{ background: "#0369a1", color: "#fff", border: "none", fontWeight: 600 }}>
+                  Get Full AudioBook — Rs. 999
+                </a>
+              </div>
+            )}
           </div>
 
-          {/* ── Chapter by Chapter ── */}
+          {/* ── Chapter by Chapter (Temp Access + BUY) ── */}
           <div style={{ marginBottom: 20 }}>
             <h3 style={{ fontSize: "1.1rem", color: "#0f172a", marginBottom: 4 }}>Listen Chapter by Chapter</h3>
             <p style={{ color: "#475569", fontSize: "0.9rem", margin: 0 }}>Each chapter is available for individual purchase (Rs. 100) or immediate listening via Temporary Access.</p>

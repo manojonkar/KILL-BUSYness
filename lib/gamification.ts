@@ -129,8 +129,6 @@ export async function hasRedeemedAudioChapter(supabase: SupabaseClient, userId: 
 }
 
 export async function hasRedeemedFullAudioBook(supabase: SupabaseClient, userId: string) {
-  return true;
-
   const { data } = await supabase
     .from("redemptions")
     .select("id")
